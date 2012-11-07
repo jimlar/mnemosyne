@@ -1,7 +1,7 @@
 (ns storage.core-test
-  (:use clojure.test
-        storage.core))
+  (:use midje.sweet)
+  (:use storage.core))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(fact "store returns the stored data"
+  (store {:a :b})
+  => {:a :b})
