@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.4.0"]]
   :repositories {"stuart" "http://stuartsierra.com/maven2"}
-;  :main graphie.main
+;  :main storage.main
   :profiles {
     :dev {
       :plugins [[lein-midje "2.0.0-SNAPSHOT"]]
