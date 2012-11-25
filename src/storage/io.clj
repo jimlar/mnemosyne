@@ -24,15 +24,6 @@
     (.write data)
     (.flush)))
 
-(defn byte-buffer [len]
-  (java.nio.ByteBuffer/allocate len))
-
-(defn buf->bytes [buf]
-  (.flip buf)
-  (let [a (byte-array (.remaining buf))]
-    (.get buf a)
-    a))
-
 (defn node [children]
   "A HAMT node with children"
   {:arcs (vector children)})
@@ -46,7 +37,8 @@
   (empty? (:arcs node)))
 
 (defn marshal-int [i]
-  (buf->bytes (.putInt (byte-buffer 4) i)))
+  "Turns a 32-bit int into a 4 byte array (assumes big endian)"
+  (byte-array (map #(byte (bit-and 0xff (bit-shift-right i %))) [24 16 8 0])))
 
 (defn marshal-string [s]
   "Turn string into byte sequence for disk storage"
