@@ -38,7 +38,7 @@
 
 (defn marshal-int [i]
   "Turns a 32-bit int into a 4 byte array (assumes big endian)"
-  (byte-array (map #(byte (bit-and 0xff (bit-shift-right i %))) [24 16 8 0])))
+  (.array (.putInt (java.nio.ByteBuffer/allocate 4) i)))
 
 (defn marshal-string [s]
   "Turn string into byte sequence for disk storage"
