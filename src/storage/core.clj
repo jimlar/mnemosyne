@@ -1,17 +1,23 @@
-(ns storage.core)
+(ns storage.core
+  (:require [storage.io :as io]))
 
-(def ^:private mock-db (atom {}))
-(defn start [] mock-db)
-  
 (def ^:private ^:dynamic *db* nil)
 
-(defmacro with-db 
-  "Evaludate body with selected database as the current database"
+(defmacro with-open-db 
+  "Evaluate body with db as the current database"
   [db & body] 
-  `(binding [*db* ~db] ~@body))
+  `(binding [*db* ~db] ~@body (close-db ~db)))
+
+(defn open-db
+  ([] (open-db "/tmp/storage"))
+  ([dir] (agent (io/open-dir dir))))
+
+(defn close-db [db]
+  (send db io/close)
+  (await db))
 
 (defn store [key value]
-  (swap! *db* assoc key value))
+  (send *db* io/write-log (.getBytes (str key "=" value \newline) "utf8")))
 
 (defn fetch [key]
   (get @*db* key))

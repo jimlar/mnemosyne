@@ -3,14 +3,14 @@
   (:use storage.core))
   
 (fact "fetch returns stored value"
-  (with-db (start)
+  (with-open-db (open-db)
     (store :a "b")
     (fetch :a))
   => "b")
 
 (fact "store on one connection affects fetch on other"
-  (with-db (start)
+  (with-open-db (open-db)
     (store :a "b"))
-  (with-db (start)
+  (with-open-db (open-db)
     (fetch :a))
   => "b")
