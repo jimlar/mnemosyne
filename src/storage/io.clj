@@ -61,3 +61,7 @@
             (marshal-int offset)
             (marshal-int 0))
     ()))
+
+(defn hexdump [barray]
+  "Create a hexdump string from the bytes"
+  (apply str (map #(with-out-str (printf "%02x" %)) barray)))
