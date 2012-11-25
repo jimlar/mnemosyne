@@ -1,6 +1,5 @@
 (ns storage.io-test
   (:use midje.sweet)
-  (:use storage.test-utils)
   (:use storage.io))
   
 (fact "leaf node are packed to marshalled key/value and zero bitmap"
