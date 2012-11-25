@@ -3,9 +3,9 @@
   (:use storage.test-utils)
   (:use storage.io))
   
-(fact "leaf node are packed to zero bitmap"
-  (pack (leaf "a" "b") 0)
-  => [0xcafebabe, 0])
+(fact "leaf node are packed to marshalled key/value and zero bitmap"
+  (hexdump (marshal-node (leaf "a" "b") 0))
+  => "000000016100000001620000000000000000")
 
 (fact "empty string is marshalled to a 32-bit zero"
   (hexdump (marshal-string ""))

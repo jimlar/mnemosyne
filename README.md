@@ -17,6 +17,11 @@ The database that never forgets
 * Synchronization, vector clocks, distributes time - NTP
 * Transactions or not?
 
+## Asumptions/decisions
+
+* Big endian on disk
+* All strings UTF-8
+
 ## Usage
 
 FIXME

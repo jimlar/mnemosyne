@@ -45,16 +45,19 @@
   "Return true if node is a leaf"
   (empty? (:arcs node)))
 
+(defn marshal-int [i]
+  (buf->bytes (.putInt (byte-buffer 4) i)))
+
 (defn marshal-string [s]
   "Turn string into byte sequence for disk storage"
-  (let [data (.getBytes s "utf-8")
-        buf (byte-buffer (+ 4 (count data)))]
-    (.putInt buf (count data))
-    (.put buf data)
-    (buf->bytes buf)))
+  (let [data (.getBytes s "utf-8")]
+    (concat (marshal-int (count data)) data)))
 
-(defn pack [node offset]
+(defn marshal-node [node offset]
   "Create bytes from node, offset is added to all pointers"
   (if (leaf? node)
-    [0, 0]
+    (concat (marshal-string (:key node)) 
+            (marshal-string (:value node))
+            (marshal-int offset)
+            (marshal-int 0))
     ()))
