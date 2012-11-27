@@ -1,18 +1,43 @@
 (ns storage.io
   (:require [clojure.java.io :as java-io]))
 
+(defprotocol DataFile
+  (get-bytes [this n] "read bytes")
+  (seek [this pos] "move pointer to pos")
+  (close [this]))
+
+(deftype BufferDataFile [buffer]
+  DataFile
+  (get-bytes [this n] 
+    (let [b (byte-array n)]
+      (.get (:buffer this) 0 n)
+      b))
+  (seek [this n] (.position (:buffer this) n))
+  (close [this] this))
+
+(deftype DiskDataFile [file]
+  DataFile
+  (get-bytes [this n] (.get (:file this) n)) 
+  (seek [this n] (.seek (:file this) n))
+  (close [this] (.close (:file this))))
+
+(defn buffer-data-file [bytes]
+  (BufferDataFile. (java.nio.ByteBuffer/wrap bytes)))
+
+(defn disk-data-file [file]
+  (DiskDataFile. (java.io.RandomAccessFile. file "r")))
+
 (defn- ensure-dir [dir]
   (.mkdirs (java-io/file dir)))
 
 (defn- open-log [dir]
-  (ensure-dir dir)
   (java-io/output-stream (java-io/file dir "storage.log") :append true))
 
 (defn- open-data [dir]
-  (ensure-dir dir)
-  (java.io.RandomAccessFile. (java-io/file dir "storage.log") "r"))
+  (disk-data-file (java-io/file dir "storage.log")))
 
 (defn open-dir [dir]
+  (ensure-dir dir)
   {:log (open-log dir) :data (open-data dir)})
 
 (defn close [db]
@@ -54,6 +79,13 @@
             (marshal-int 0))
     ()))
 
+(defn unmarshal-node [in]
+  "Create bytes from node, offset is added to all pointers"
+  ())
+
 (defn hexdump [barray]
   "Create a hexdump string from the bytes"
   (apply str (map #(with-out-str (printf "%02x" %)) barray)))
+
+(defn hexread [s]
+  ())
