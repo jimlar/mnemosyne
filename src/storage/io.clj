@@ -1,32 +1,6 @@
 (ns storage.io
   (:require [clojure.java.io :as java-io]))
 
-(defprotocol DataFile
-  (get-bytes [this n] "read bytes")
-  (seek [this pos] "move pointer to pos")
-  (close [this]))
-
-(deftype BufferDataFile [buffer]
-  DataFile
-  (get-bytes [this n] 
-    (let [b (byte-array n)]
-      (.get (:buffer this) 0 n)
-      b))
-  (seek [this n] (.position (:buffer this) n))
-  (close [this] this))
-
-(deftype DiskDataFile [file]
-  DataFile
-  (get-bytes [this n] (.get (:file this) n)) 
-  (seek [this n] (.seek (:file this) n))
-  (close [this] (.close (:file this))))
-
-(defn buffer-data-file [bytes]
-  (BufferDataFile. (java.nio.ByteBuffer/wrap bytes)))
-
-(defn disk-data-file [file]
-  (DiskDataFile. (java.io.RandomAccessFile. file "r")))
-
 (defn- ensure-dir [dir]
   (.mkdirs (java-io/file dir)))
 
@@ -34,7 +8,7 @@
   (java-io/output-stream (java-io/file dir "storage.log") :append true))
 
 (defn- open-data [dir]
-  (disk-data-file (java-io/file dir "storage.log")))
+  (java.io.RandomAccessFile. (java-io/file dir "storage.log") "r"))
 
 (defn open-dir [dir]
   (ensure-dir dir)
@@ -88,4 +62,5 @@
   (apply str (map #(with-out-str (printf "%02x" %)) barray)))
 
 (defn hexread [s]
-  ())
+  "Convert hex string to byte array"
+  (byte-array (map #(byte (Integer/parseInt % 16)) (map #(apply str %) (partition-all 2 s)))))

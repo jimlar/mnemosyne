@@ -1,7 +1,15 @@
 (ns storage.io-test
   (:use midje.sweet)
   (:use storage.io))
+
+(fact "hexread decodes 4711 properly"
+  (apply list (hexread "4711"))
+  => [(byte 0x47) (byte 0x11)])
   
+(fact "hexdump dumps 4711 properly"
+  (hexdump (byte-array [(byte 0x47) (byte 0x11)]))
+  => "4711")
+
 (fact "int is mashalled as big endian words"
   (hexdump (marshal-int 0x4711))
   => "00004711"
