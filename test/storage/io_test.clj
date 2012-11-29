@@ -1,6 +1,7 @@
 (ns storage.io-test
   (:use midje.sweet)
-  (:use storage.io))
+  (:use storage.io)
+  (:require [clojure.java.io :as io]))
 
 (fact "hexread decodes 4711 properly"
   (apply list (hexread "4711"))
@@ -41,5 +42,5 @@
   => "000000016100000001620000126700000000")
 
 (fact "leaf node can be unmarshalled"
-  (unmarshal-node (hexread "0000126700000000"))
+  (unmarshal-node (io/input-stream (hexread "0000126700000000")))
   => {:pointer 4711 :arcs []})
