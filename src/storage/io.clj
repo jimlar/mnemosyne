@@ -99,7 +99,8 @@
 (defn unmarshal-node [in position]
   "Read node from bytes"
   (seek in position)
-  (let [pointer (unmarshal-int (read-bytes in 4))]
+  (let [pointer (unmarshal-int (read-bytes in 4))
+        arcbits (unmarshal-int (read-bytes in 4))]
     (seek in pointer)
     {:key (unmarshal-string in) :value (unmarshal-string in) :arcs []}))
 
