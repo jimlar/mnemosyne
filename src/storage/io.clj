@@ -1,7 +1,6 @@
 (ns storage.io
   (:require [clojure.java.io :as java-io]))
 
-
 (defn- ensure-dir [dir]
   (.mkdirs (java-io/file dir)))
 
@@ -24,13 +23,39 @@
     (.write data)
     (.flush)))
 
+(defprotocol SeekableInput
+  (seek [r pos])
+  (read-bs [r bs]))
+
+(extend-type java.io.RandomAccessFile
+  SeekableInput
+  (seek [r pos] (.seek r pos))
+  (read-bs [r bs] (.read r bs)))
+
+(extend-type java.nio.ByteBuffer
+  SeekableInput
+  (seek [r pos] (.position r pos))
+  (read-bs [r bs] (.get r bs)))
+
 (defn read-bytes [in n]
   (let [bs (byte-array n)]
-    (.read in bs)
+    (read-bs in bs)
     bs))
 
 (defn seek [in pos]
   (.seek in pos))
+
+(defn hexdump [barray]
+  "Create a hex-string from a byte array"
+  (apply str (map #(with-out-str (printf "%02x" %)) barray)))
+
+(defn hexread [s]
+  "Convert hex-string to a seekable input stream"
+  (java.nio.ByteBuffer/wrap 
+    (byte-array 
+      (map #(byte (Integer/parseInt % 16)) 
+           (map #(apply str %) 
+                (partition-all 2 s))))))
 
 (defn node [children]
   "A HAMT node with children"
@@ -70,14 +95,3 @@
   "Read node from bytes"
   {:pointer (unmarshal-int (read-bytes in 4)) :arcs []})
 
-(defn hexdump [barray]
-  "Create a hex-string from a byte array"
-  (apply str (map #(with-out-str (printf "%02x" %)) barray)))
-
-(defn hexread [s]
-  "Convert hex-string to a seekable input stream"
-  (java-io/input-stream 
-    (byte-array 
-      (map #(byte (Integer/parseInt % 16)) 
-           (map #(apply str %) 
-                (partition-all 2 s))))))
