@@ -1,6 +1,7 @@
 (ns storage.io
   (:require [clojure.java.io :as java-io]))
 
+
 (defn- ensure-dir [dir]
   (.mkdirs (java-io/file dir)))
 
@@ -27,6 +28,9 @@
   (let [bs (byte-array n)]
     (.read in bs)
     bs))
+
+(defn seek [in pos]
+  (.seek in pos))
 
 (defn node [children]
   "A HAMT node with children"
@@ -67,9 +71,13 @@
   {:pointer (unmarshal-int (read-bytes in 4)) :arcs []})
 
 (defn hexdump [barray]
-  "Create a hexdump string from the bytes"
+  "Create a hex-string from a byte array"
   (apply str (map #(with-out-str (printf "%02x" %)) barray)))
 
 (defn hexread [s]
-  "Convert hex string to byte array"
-  (byte-array (map #(byte (Integer/parseInt % 16)) (map #(apply str %) (partition-all 2 s)))))
+  "Convert hex-string to a seekable input stream"
+  (java-io/input-stream 
+    (byte-array 
+      (map #(byte (Integer/parseInt % 16)) 
+           (map #(apply str %) 
+                (partition-all 2 s))))))
