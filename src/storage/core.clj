@@ -17,7 +17,7 @@
   (await db))
 
 (defn store [key value]
-  (send *db* io/write-log (.getBytes (str key "=" value \newline) "utf8")))
+  (send *db* io/write-bytes (.getBytes (str key "=" value \newline) "utf8")))
 
 (defn fetch [key]
   (get @*db* key))

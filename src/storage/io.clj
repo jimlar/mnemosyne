@@ -4,21 +4,21 @@
 (defn- ensure-dir [dir]
   (.mkdirs (java-io/file dir)))
 
-(defn- open-log [dir]
+(defn- open-output [dir]
   (java-io/output-stream (java-io/file dir "storage.log") :append true))
 
-(defn- open-data [dir]
+(defn- open-input [dir]
   (java.io.RandomAccessFile. (java-io/file dir "storage.log") "r"))
 
 (defn open-dir [dir]
   (ensure-dir dir)
-  {:log (open-log dir) :data (open-data dir)})
+  {:log (open-output dir) :data (open-input dir)})
 
 (defn close [db]
   (.close (:log db))
   (.close (:data db)))
 
-(defn write-log [db data]
+(defn write-bytes [db data] 
   (doto (:log db)
     (.write data)
     (.flush)))
