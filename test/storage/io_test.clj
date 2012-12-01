@@ -41,5 +41,5 @@
   => "000000016100000001620000126700000000")
 
 (fact "leaf node can be unmarshalled"
-  (unmarshal-node (hexread "0000126700000000"))
-  => {:pointer 4711 :arcs []})
+  (unmarshal-node (hexread "000000016100000001620000000000000000") 10)
+  => (leaf "a" "b"))

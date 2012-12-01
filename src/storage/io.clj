@@ -24,17 +24,17 @@
     (.flush)))
 
 (defprotocol SeekableInput
-  (seek [r pos])
+  (seek-to [r pos])
   (read-bs [r bs]))
 
 (extend-type java.io.RandomAccessFile
   SeekableInput
-  (seek [r pos] (.seek r pos))
+  (seek-to [r pos] (.seek r pos))
   (read-bs [r bs] (.read r bs)))
 
 (extend-type java.nio.ByteBuffer
   SeekableInput
-  (seek [r pos] (.position r pos))
+  (seek-to [r pos] (.position r pos))
   (read-bs [r bs] (.get r bs)))
 
 (defn read-bytes [in n]
@@ -43,7 +43,7 @@
     bs))
 
 (defn seek [in pos]
-  (.seek in pos))
+  (seek-to in pos))
 
 (defn hexdump [barray]
   "Create a hex-string from a byte array"
@@ -82,6 +82,11 @@
   (let [data (.getBytes s "utf-8")]
     (concat (marshal-int (count data)) data)))
 
+(defn unmarshal-string [in]
+  "Read a string"
+  (let [len (unmarshal-int (read-bytes in 4))]
+    (String. (read-bytes in len) "utf-8")))
+
 (defn marshal-node [node offset]
   "Create bytes from node, offset is added to all pointers"
   (if (leaf? node)
@@ -91,7 +96,10 @@
             (marshal-int 0))
     ()))
 
-(defn unmarshal-node [in]
+(defn unmarshal-node [in position]
   "Read node from bytes"
-  {:pointer (unmarshal-int (read-bytes in 4)) :arcs []})
+  (seek in position)
+  (let [pointer (unmarshal-int (read-bytes in 4))]
+    (seek in pointer)
+    {:key (unmarshal-string in) :value (unmarshal-string in) :arcs []}))
 
