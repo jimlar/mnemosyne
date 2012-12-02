@@ -79,10 +79,20 @@
   [i]
   (.array (.putInt (java.nio.ByteBuffer/allocate 4) i)))
 
+(defn marshal-long
+  "Turns a 64-bit long into a 8 byte array (assumes big endian)"
+  [l]
+  (.array (.putLong (java.nio.ByteBuffer/allocate 8) l)))
+
 (defn unmarshal-int
-  "Turns a 32-bit int into a 4 byte array (assumes big endian)"
+  "Turns a 4 byte array into a 32-bit integer (assumes big endian)"
   [barray]
   (.getInt (java.nio.ByteBuffer/wrap barray) 0))
+
+(defn unmarshal-long
+  "Turns a 8 byte array into a 64-bit long (assumes big endian)"
+  [barray]
+  (.getLong (java.nio.ByteBuffer/wrap barray) 0))
 
 (defn marshal-string
   "Turn string into byte sequence for disk storage"
@@ -102,16 +112,16 @@
   (if (leaf? node)
     (concat (marshal-string (:key node)) 
             (marshal-string (:value node))
-            (marshal-int offset)
-            (marshal-int 0))
+            (marshal-long offset)
+            (marshal-long 0))
     ()))
 
 (defn unmarshal-node
   "Read node from bytes"
   [in position] 
   (seek in position)
-    (let [pointer (unmarshal-int (read-bytes in 4))
-          arcbits (unmarshal-int (read-bytes in 4))]
+    (let [pointer (unmarshal-long (read-bytes in 8))
+          arcbits (unmarshal-long (read-bytes in 8))]
       (seek in pointer)
       {:key (unmarshal-string in) :value (unmarshal-string in) :arcs []}))
 

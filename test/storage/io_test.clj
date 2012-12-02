@@ -10,6 +10,20 @@
   (hexdump (byte-array [(byte 0x47) (byte 0x11)]))
   => "4711")
 
+(fact "long is mashalled as big endian words"
+  (hexdump (marshal-long 0x4711))
+  => "0000000000004711"
+  (hexdump (marshal-long 0x00470047))
+  => "0000000000470047"
+  (hexdump (marshal-long 0x000000a1))
+  => "00000000000000a1")
+
+(fact "negative longs are mashalled correctly"
+  (hexdump (marshal-long -1))
+  => "ffffffffffffffff"
+  (hexdump (marshal-long -2))
+  => "fffffffffffffffe")
+
 (fact "int is mashalled as big endian words"
   (hexdump (marshal-int 0x4711))
   => "00004711"
@@ -34,12 +48,12 @@
 
 (fact "leaf node are packed to marshalled key/value and zero bitmap"
   (hexdump (marshal-node (leaf "a" "b") 0))
-  => "000000016100000001620000000000000000")
+  => "0000000161000000016200000000000000000000000000000000")
 
 (fact "the offset is added to key/value back reference"
   (hexdump (marshal-node (leaf "a" "b") 4711))
-  => "000000016100000001620000126700000000")
+  => "0000000161000000016200000000000012670000000000000000")
 
 (fact "leaf node can be unmarshalled"
-  (unmarshal-node (hexread "000000016100000001620000000000000000") 10)
+  (unmarshal-node (hexread "0000000161000000016200000000000000000000000000000000") 10)
   => (leaf "a" "b"))
