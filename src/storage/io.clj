@@ -59,20 +59,28 @@
            (map #(apply str %) 
                 (partition-all 2 s))))))
 
-(defn node
-  "A HAMT node with children"
-  [children] 
-  {:arcs (vector children)})
+(defn empty-node
+  "Create a HAMT node with no arcs"
+  [] 
+  {:arcbits (long 0) :arcs (vector (repeat 64 nil))})
+
+(defn set-arc 
+  "Change one arc of a node"
+  [node arc-no arc-ptr]
+  (assoc 
+    node 
+    :arcbits (long (bit-set (:arcbits node) arc-no))
+    :arcs (assoc (:arcs node) arc-no arc-ptr)))
 
 (defn leaf
   "A HAMT leaf node, with a key and a value"
   [key, value] 
-  {:arcs [] :key key :value value})
+  (assoc (empty-node) :key key :value value))
 
 (defn leaf?
   "Return true if node is a leaf"
   [node] 
-  (empty? (:arcs node)))
+  (reduce #(and %1 %2) true (:arcs node)))
 
 (defn marshal-int
   "Turns a 32-bit int into a 4 byte array (assumes big endian)"
@@ -123,5 +131,8 @@
     (let [pointer (unmarshal-long in)
           arcbits (unmarshal-long in)]
       (seek in pointer)
-      {:key (unmarshal-string in) :value (unmarshal-string in) :arcs []}))
+      (if (= 0 arcbits) ; leaf node or arc node?
+        (leaf (unmarshal-string in) (unmarshal-string in))
+        ())))
+
 
