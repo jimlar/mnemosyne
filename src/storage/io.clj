@@ -50,7 +50,7 @@
   [barray]
   (apply str (map #(with-out-str (printf "%02x" %)) barray)))
 
-(defn hexread
+(defn hexreader
   "Convert hex-string to a seekable input stream"
   [s] 
   (java.nio.ByteBuffer/wrap 
@@ -85,14 +85,14 @@
   (.array (.putLong (java.nio.ByteBuffer/allocate 8) l)))
 
 (defn unmarshal-int
-  "Turns a 4 byte array into a 32-bit integer (assumes big endian)"
-  [barray]
-  (.getInt (java.nio.ByteBuffer/wrap barray) 0))
+  "Reads 4 bytes from in and turns them into a 32-bit integer (assumes big endian)"
+  [in]
+  (.getInt (java.nio.ByteBuffer/wrap (read-bytes in 4)) 0))
 
 (defn unmarshal-long
-  "Turns a 8 byte array into a 64-bit long (assumes big endian)"
-  [barray]
-  (.getLong (java.nio.ByteBuffer/wrap barray) 0))
+  "Reads 8 bytes from in and turns them into a 64-bit long (assumes big endian)"
+  [in]
+  (.getLong (java.nio.ByteBuffer/wrap (read-bytes in 8)) 0))
 
 (defn marshal-string
   "Turn string into byte sequence for disk storage"
@@ -103,14 +103,14 @@
 (defn unmarshal-string
   "Read a string"
   [in] 
-  (let [len (unmarshal-int (read-bytes in 4))]
+  (let [len (unmarshal-int in)]
     (String. (read-bytes in len) "utf-8")))
 
 (defn marshal-node
   "Create bytes from node, offset is added to all pointers"
   [node offset] 
   (if (leaf? node)
-    (concat (marshal-string (:key node)) 
+    (concat (marshal-string (:key node))
             (marshal-string (:value node))
             (marshal-long offset)
             (marshal-long 0))
@@ -120,8 +120,8 @@
   "Read node from bytes"
   [in position] 
   (seek in position)
-    (let [pointer (unmarshal-long (read-bytes in 8))
-          arcbits (unmarshal-long (read-bytes in 8))]
+    (let [pointer (unmarshal-long in)
+          arcbits (unmarshal-long in)]
       (seek in pointer)
       {:key (unmarshal-string in) :value (unmarshal-string in) :arcs []}))
 

@@ -2,8 +2,8 @@
   (:use midje.sweet)
   (:use storage.io))
 
-(fact "hexread decodes 4711 properly"
-  (apply list (read-bytes (hexread "4711") 2))
+(fact "hexreader decodes 4711 properly"
+  (apply list (read-bytes (hexreader "4711") 2))
   => [(byte 0x47) (byte 0x11)])
   
 (fact "hexdump dumps 4711 properly"
@@ -55,5 +55,5 @@
   => "0000000161000000016200000000000012670000000000000000")
 
 (fact "leaf node can be unmarshalled"
-  (unmarshal-node (hexread "0000000161000000016200000000000000000000000000000000") 10)
+  (unmarshal-node (hexreader "0000000161000000016200000000000000000000000000000000") 10)
   => (leaf "a" "b"))
