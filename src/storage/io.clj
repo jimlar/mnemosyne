@@ -62,7 +62,7 @@
 (defn empty-node
   "Create a HAMT node with no arcs"
   [] 
-  {:arcbits (long 0) :arcs (vector (repeat 64 nil))})
+  {:arcbits (long 0) :arcs (vec (repeat 64 nil))})
 
 (defn set-arc 
   "Change one arc of a node"
@@ -80,7 +80,7 @@
 (defn leaf?
   "Return true if node is a leaf"
   [node] 
-  (reduce #(and %1 %2) true (:arcs node)))
+  (= 0 (:arcbits node)))
 
 (defn marshal-int
   "Turns a 32-bit int into a 4 byte array (assumes big endian)"
@@ -122,7 +122,9 @@
             (marshal-string (:value node))
             (marshal-long offset)
             (marshal-long 0))
-    ()))
+    (concat (apply concat (map marshal-long (filter #(not (nil? %)) (:arcs node))))
+            (marshal-long offset)
+            (marshal-long (:arcbits node)))))
 
 (defn unmarshal-node
   "Read node from bytes"

@@ -58,6 +58,10 @@
   (unmarshal-node (hexreader "0000000161000000016200000000000000000000000000000000") 10)
   => (leaf "a" "b"))
 
-;(fact "non-leaf node is marshalled with arc pointer table"
-;  (hexdump (marshal-node (node [nil ]) 0))
-;  )
+(fact "arc-node is marshalled with arc pointer table"
+  (hexdump (marshal-node (set-arc (empty-node) 2 4711) 0))
+  => "000000000000126700000000000000000000000000000004")
+
+(fact "arc-node is marshalled with arc pointer table and file offset"
+  (hexdump (marshal-node (set-arc (empty-node) 2 4711) 3))
+  => "000000000000126700000000000000030000000000000004")
