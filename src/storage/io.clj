@@ -59,10 +59,15 @@
            (map #(apply str %) 
                 (partition-all 2 s))))))
 
+(defn node
+  "Create a HAMT node with no arcs"
+  [arcbits arcs] 
+  {:arcbits (long arcbits) :arcs (vec arcs)})
+
 (defn empty-node
   "Create a HAMT node with no arcs"
   [] 
-  {:arcbits (long 0) :arcs (vec (repeat 64 nil))})
+  (node 0 (repeat 64 nil)))
 
 (defn set-arc 
   "Change one arc of a node"
@@ -126,6 +131,16 @@
             (marshal-long offset)
             (marshal-long (:arcbits node)))))
 
+(defn unmarshal-arc-table 
+  "Read arc pointer table into arc vector"
+  [arcbits in]
+  (map 
+    (fn [bit] 
+      (if (bit-test arcbits bit)
+          (unmarshal-long in)
+          nil))
+    (range 64)))
+
 (defn unmarshal-node
   "Read node from bytes"
   [in position] 
@@ -135,6 +150,4 @@
       (seek in pointer)
       (if (= 0 arcbits) ; leaf node or arc node?
         (leaf (unmarshal-string in) (unmarshal-string in))
-        ())))
-
-
+        (node arcbits (unmarshal-arc-table arcbits in)))))

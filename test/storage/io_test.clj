@@ -65,3 +65,7 @@
 (fact "arc-node is marshalled with arc pointer table and file offset"
   (hexdump (marshal-node (set-arc (empty-node) 2 4711) 3))
   => "000000000000126700000000000000030000000000000004")
+
+(fact "arc-node is marshalled with arc pointer table"
+  (unmarshal-node (hexreader "000000000000126700000000000000000000000000000004") 8)
+  => (set-arc (empty-node) 2 4711))
