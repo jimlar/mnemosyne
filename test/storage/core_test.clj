@@ -4,7 +4,19 @@
   (:require [storage.io :as io]))
   
 (defn mock-read-db [& data]
-  (atom {:log nil :data (apply io/hexreader data)}))
+  (agent {:log nil :data (apply io/hexreader data)}))
+
+(fact "node-path on empty db gives empty list"
+  (node-path (io/hexreader "0000000000000000") 0 4711)
+  => [])
+
+(fact "node-path on leaf db gives list with leaf"
+  (node-path (io/hexreader "0000000000000012" "0000000161" "0000000162" "00000000000000080000000000000000") 18 4711)
+  => [(io/leaf "a" "b")])
+
+(fact "node-path on arc-node with leaf db gives list with leaf and arc-node"
+  (node-path (io/hexreader "000000000000002A" "0000000161" "0000000162" "00000000000000080000000000000000" "0000000000000012" "00000000000000220000000000000001") 42 0)
+  => [(io/leaf "a" "b") (io/set-arc (io/empty-node) 0 18)])
 
 (fact "fetch on leaf node only returns leaf value"
   (fetch
@@ -43,4 +55,3 @@
     (store db :the-other-key "the other value")
     [(fetch db :the-key) (fetch :the-other-key)])
   => ["the value" "the other value"])
-

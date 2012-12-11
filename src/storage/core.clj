@@ -17,6 +17,18 @@
   (await db)
   db)
 
+(defn hash-code [key]
+  (hash (name key)))
+
+(defn node-path [in node-ptr hash-bits]
+  (if (= 0 node-ptr)
+    []
+    (let [node (io/unmarshal-node in node-ptr)]
+      (if (io/leaf? node) [node]
+        (let [child-ptr ((:arcs node) (bit-and hash-bits 63))]
+          (if (nil? child-ptr) [node]
+            (conj (node-path in child-ptr (bit-shift-right hash-bits 6)) node)))))))
+
 (defn store 
   ([key value] (store *db* key value))
   ([db key value] 
@@ -31,8 +43,9 @@
 (defn fetch 
   ([key] (fetch *db* key))
   ([db key] 
-    (let [node (io/unmarshal-node (:data @db) (io/root-node (:data @db)))]
-      (if (= (name key) (:key node))
-        (:value node)
-        nil))))
-
+    (let [in (:data @db)
+          node (first (node-path in (io/root-node in) (hash-code key)))]
+      (cond 
+        (nil? node) nil
+        (= (name key) (:key node)) (:value node)
+        :else nil))))
