@@ -24,7 +24,7 @@
       db 
       (fn [db]
         (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
-        (io/set-root-node db (- (io/end-pointer db) 16))))
+        (io/set-root-node db (- (io/end-pointer db) (io/node-size)))))
     (await db)
     db))
 

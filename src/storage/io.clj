@@ -80,6 +80,8 @@
            (map #(apply str %) 
                 (partition-all 2 (apply str strs)))))))
 
+(defn node-size [] 16)
+
 (defn node
   "Create a HAMT node with no arcs"
   [arcbits arcs] 
