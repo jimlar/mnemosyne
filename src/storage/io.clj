@@ -5,10 +5,19 @@
   (.mkdirs (java-io/file dir)))
 
 (defn- open-output [dir]
-  (java-io/output-stream (java-io/file dir "storage.log") :append true))
+  (let [file (java-io/file dir "storage.log")
+        out (java-io/output-stream file :append true)]
+    (if (= 0 (.length file))
+      (doall (repeatedly 8 #(.write out 0))))
+    out))
 
 (defn- open-input [dir]
   (java.io.RandomAccessFile. (java-io/file dir "storage.log") "r"))
+
+(defn temp-dir []
+  (doto 
+    (java.io.File/createTempFile "storage" ".tmp") 
+    (.delete)))
 
 (defn open-dir [dir]
   (ensure-dir dir)
@@ -20,8 +29,9 @@
 
 (defn write-bytes [db data] 
   (doto (:log db)
-    (.write data)
-    (.flush)))
+    (.write data 0 (count data))
+    (.flush))
+  db)
 
 (defprotocol SeekableInput
   (seek-to [r pos])
@@ -34,7 +44,7 @@
 
 (extend-type java.nio.ByteBuffer
   SeekableInput
-  (seek-to [r pos] (.position r pos))
+  (seek-to [r pos] (.position r (int pos)))
   (read-bs [r bs] (.get r bs)))
 
 (defn read-bytes [in n]
@@ -46,18 +56,23 @@
   (seek-to in pos))
 
 (defn hexdump 
-  "Create a hex-string from a byte array"
+  "Create a hex-string from a byte array or random access file"
   [barray]
-  (apply str (map #(with-out-str (printf "%02x" %)) barray)))
+  (if (instance? java.io.RandomAccessFile barray)
+    (let [bs (byte-array (.length barray))]
+      (seek barray 0)
+      (.readFully barray bs)
+      (hexdump bs))
+    (apply str (map #(with-out-str (printf "%02x" %)) barray))))
 
 (defn hexreader
   "Convert hex-string to a seekable input stream"
-  [s] 
+  [& strs] 
   (java.nio.ByteBuffer/wrap 
     (byte-array 
       (map #(byte (Integer/parseInt % 16)) 
            (map #(apply str %) 
-                (partition-all 2 s))))))
+                (partition-all 2 (apply str strs)))))))
 
 (defn node
   "Create a HAMT node with no arcs"
@@ -123,13 +138,13 @@
   "Create bytes from node, offset is added to all pointers"
   [node offset] 
   (if (leaf? node)
-    (concat (marshal-string (:key node))
-            (marshal-string (:value node))
-            (marshal-long offset)
-            (marshal-long 0))
-    (concat (apply concat (map marshal-long (filter #(not (nil? %)) (:arcs node))))
-            (marshal-long offset)
-            (marshal-long (:arcbits node)))))
+    (byte-array (concat (marshal-string (name (:key node)))
+                        (marshal-string (:value node))
+                        (marshal-long offset)
+                        (marshal-long 0)))
+    (byte-array (concat (apply concat (map marshal-long (filter #(not (nil? %)) (:arcs node))))
+                        (marshal-long offset)
+                        (marshal-long (:arcbits node))))))
 
 (defn unmarshal-arc-table 
   "Read arc pointer table into arc vector"
@@ -151,3 +166,7 @@
       (if (= 0 arcbits) ; leaf node or arc node?
         (leaf (unmarshal-string in) (unmarshal-string in))
         (node arcbits (unmarshal-arc-table arcbits in)))))
+
+(defn root-node [in]
+  (seek in 0)
+  (unmarshal-long in))

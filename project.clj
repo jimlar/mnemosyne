@@ -8,7 +8,7 @@
 ;  :main storage.main
   :profiles {
     :dev {
-      :plugins [[lein-midje "2.0.0-SNAPSHOT"]]
+      :plugins [[lein-midje "2.0.3"]]
     }
     :test {
       :dependencies [

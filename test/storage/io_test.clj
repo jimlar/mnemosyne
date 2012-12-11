@@ -55,7 +55,7 @@
   => "0000000161000000016200000000000012670000000000000000")
 
 (fact "leaf node can be unmarshalled"
-  (unmarshal-node (hexreader "0000000161000000016200000000000000000000000000000000") 10)
+  (unmarshal-node (hexreader "0000000161" "0000000162" "0000000000000000" "0000000000000000") 10)
   => (leaf "a" "b"))
 
 (fact "arc-node is marshalled with arc pointer table"
@@ -67,5 +67,9 @@
   => "000000000000126700000000000000030000000000000004")
 
 (fact "arc-node is marshalled with arc pointer table"
-  (unmarshal-node (hexreader "000000000000126700000000000000000000000000000004") 8)
+  (unmarshal-node (hexreader "0000000000001267" "0000000000000000" "0000000000000004") 8)
   => (set-arc (empty-node) 2 4711))
+
+(fact "root-node read from start of file"
+  (root-node (hexreader "0000000000000010" "0000000161" "0000000162" "0000000000000008" "0000000000000000"))
+  => 16)
