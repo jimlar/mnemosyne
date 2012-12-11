@@ -23,3 +23,9 @@
     (store db :the-key "the value")
     (fetch db :the-key))
   => "the value")
+
+(fact "store single key value on empty db gives nil back for other key"
+  (let [db (open-db)]
+    (store db :the-key "the value")
+    (fetch db :the-other-key))
+  => nil)

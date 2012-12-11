@@ -14,7 +14,8 @@
 
 (defn close-db [db]
   (send-off db io/close)
-  (await db))
+  (await db)
+  db)
 
 (defn store 
   ([key value] (store *db* key value))
@@ -31,5 +32,7 @@
   ([key] (fetch *db* key))
   ([db key] 
     (let [node (io/unmarshal-node (:data @db) (io/root-node (:data @db)))]
-      (:value node))))
+      (if (= (name key) (:key node))
+        (:value node)
+        nil))))
 
