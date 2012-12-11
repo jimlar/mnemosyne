@@ -4,15 +4,17 @@
 (defn- ensure-dir [dir]
   (.mkdirs (java-io/file dir)))
 
+(defn- logfile [dir]
+  (java-io/file dir "storage.log"))
+
 (defn- open-output [dir]
-  (let [file (java-io/file dir "storage.log")
-        out (java-io/output-stream file :append true)]
-    (if (= 0 (.length file))
+  (let [out (java.io.RandomAccessFile. (logfile dir) "rws")]
+    (if (= 0 (.length out))
       (doall (repeatedly 8 #(.write out 0))))
     out))
 
 (defn- open-input [dir]
-  (java.io.RandomAccessFile. (java-io/file dir "storage.log") "r"))
+  (java.io.RandomAccessFile. (logfile dir) "r"))
 
 (defn temp-dir []
   (doto 
@@ -28,10 +30,9 @@
   (.close (:data db)))
 
 (defn write-bytes [db data] 
-  (doto (:log db)
-    (.write data 0 (count data))
-    (.flush))
-  db)
+  (let [log (:log db)]
+    (.seek log (.length log))
+    (.write log data)))
 
 (defprotocol SeekableInput
   (seek-to [r pos])

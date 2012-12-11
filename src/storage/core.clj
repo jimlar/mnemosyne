@@ -13,13 +13,13 @@
   ([dir] (agent (io/open-dir dir))))
 
 (defn close-db [db]
-  (send db io/close)
+  (send-off db io/close)
   (await db))
 
 (defn store 
   ([key value] (store *db* key value))
   ([db key value] 
-    (send db io/write-bytes (io/marshal-node (io/leaf key value) 0))
+    (send-off db io/write-bytes (io/marshal-node (io/leaf key value) 0))
     (await db)
     db))
 
