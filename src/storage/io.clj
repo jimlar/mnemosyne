@@ -29,10 +29,15 @@
   (.close (:log db))
   (.close (:data db)))
 
-(defn write-bytes [db data] 
-  (let [log (:log db)]
-    (.seek log (.length log))
-    (.write log data)))
+(defn end-pointer [db]
+  (.length (:log db)))
+
+(defn write-bytes 
+  ([db data] (write-bytes db data (end-pointer db)))
+  ([db data pos] 
+    (.seek (:log db) pos)
+    (.write (:log db) data)
+    db))
 
 (defprotocol SeekableInput
   (seek-to [r pos])
@@ -171,3 +176,7 @@
 (defn root-node [in]
   (seek in 0)
   (unmarshal-long in))
+
+(defn set-root-node [db ptr]
+  (write-bytes db (marshal-long ptr) 0))
+

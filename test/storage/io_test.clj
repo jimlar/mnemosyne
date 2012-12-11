@@ -73,3 +73,4 @@
 (fact "root-node read from start of file"
   (root-node (hexreader "0000000000000010" "0000000161" "0000000162" "0000000000000008" "0000000000000000"))
   => 16)
+

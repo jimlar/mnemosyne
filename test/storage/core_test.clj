@@ -17,3 +17,9 @@
     (store db :a "b")
     (io/hexdump (:data @db)))
   => "00000000000000120000000161000000016200000000000000080000000000000000")
+
+(fact "store single key value on empty db can be read back"
+  (let [db (open-db)]
+    (store db :the-key "the value")
+    (fetch db :the-key))
+  => "the value")

@@ -19,7 +19,11 @@
 (defn store 
   ([key value] (store *db* key value))
   ([db key value] 
-    (send-off db io/write-bytes (io/marshal-node (io/leaf key value) 0))
+    (send-off 
+      db 
+      (fn [db]
+        (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
+        (io/set-root-node db (- (io/end-pointer db) 16))))
     (await db)
     db))
 
