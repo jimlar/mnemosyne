@@ -16,6 +16,7 @@ The database that never forgets
 * Key/hint-tables in memory?
 * Synchronization, vector clocks, distributes time - NTP
 * Transactions or not?
+* How to manage files open for read and write
 
 ## Asumptions/decisions
 
