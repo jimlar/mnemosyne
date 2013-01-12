@@ -49,9 +49,9 @@
     (fetch db :the-key))
   => "the other value")
 
-#_(fact "store two key/values on empty db can both be read back"
+(fact "store two key/values on empty db can both be read back"
   (let [db (open-db)]
     (store db :the-key "the value")
     (store db :the-other-key "the other value")
-    [(fetch db :the-key) (fetch :the-other-key)])
+    [(fetch db :the-key) (fetch db :the-other-key)])
   => ["the value" "the other value"])

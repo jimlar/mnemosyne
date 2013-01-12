@@ -4,7 +4,7 @@
 (def ^:private ^:dynamic *db* nil)
 
 (defmacro with-open-db 
-  "Evaluate body with db as the current database"
+  "Evaluate body with db as the current database and close db after"
   [db & body] 
   `(binding [*db* ~db] ~@body (close-db ~db)))
 
@@ -17,10 +17,17 @@
   (await db)
   db)
 
-(defn hash-code [key]
+(defn hash-code 
+  "Hash a string key"
+  [key]
   (hash (name key)))
 
-(defn node-path [in node-ptr hash-bits]
+(defn node-path 
+  "
+  Reads the stored nodes matching the hash, deepest node first.
+  (all hash bits may not be used)
+  "
+  [in node-ptr hash-bits]
   (if (= 0 node-ptr)
     []
     (let [node (io/unmarshal-node in node-ptr)]
@@ -30,10 +37,11 @@
             (conj (node-path in child-ptr (bit-shift-right hash-bits 6)) node)))))))
 
 (defn store 
+  "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
   ([key value] (store *db* key value))
   ([db key value] 
     (send-off 
-      db 
+      db
       (fn [db]
         (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
         (io/set-root-node db (- (io/end-pointer db) (io/node-size)))))
@@ -41,6 +49,7 @@
     db))
 
 (defn fetch 
+  "Fetch a value for a key, returns nil if not found"
   ([key] (fetch *db* key))
   ([db key] 
     (let [in (:data @db)
