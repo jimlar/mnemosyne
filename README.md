@@ -18,6 +18,8 @@ The database that never forgets
 * Transactions or not?
 * How to manage files open for read and write
 
+* Use gloss for binary: https://github.com/ztellman/gloss/wiki/Introduction
+
 ## Asumptions/decisions
 
 * Big endian on disk
