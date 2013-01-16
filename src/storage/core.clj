@@ -43,6 +43,11 @@
     (send-off 
       db
       (fn [db]
+
+        ; Find the node path for the hashed key,
+        ; walk the node path and add new nodes for the modified branch
+        ; - If the first node in path is a leaf, insert a new node 
+
         (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
         (io/set-root-node db (- (io/end-pointer db) (io/node-size)))))
     (await db)
