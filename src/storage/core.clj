@@ -31,10 +31,12 @@
   (if (= 0 node-ptr)
     []
     (let [node (io/unmarshal-node in node-ptr)]
-      (if (io/leaf? node) [node]
+      (if (io/leaf? node) 
+        [{:node node :hash (bit-and hash-bits 63)}]
         (let [child-ptr ((:arcs node) (bit-and hash-bits 63))]
-          (if (nil? child-ptr) [node]
-            (conj (node-path in child-ptr (bit-shift-right hash-bits 6)) node)))))))
+          (if (nil? child-ptr) 
+            [{:node node :hash (bit-and hash-bits 63)}]
+            (conj (node-path in child-ptr (bit-shift-right hash-bits 6)) {:node node :hash (bit-and hash-bits 63)})))))))
 
 (defn store 
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
@@ -49,6 +51,9 @@
         ; - If the first node in path is a leaf, insert a new node 
 
         (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
+
+
+
         (io/set-root-node db (- (io/end-pointer db) (io/node-size)))))
     (await db)
     db))
@@ -58,7 +63,7 @@
   ([key] (fetch *db* key))
   ([db key] 
     (let [in (:data @db)
-          node (first (node-path in (io/root-node in) (hash-code key)))]
+          node (:node (first (node-path in (io/root-node in) (hash-code key))))]
       (cond 
         (nil? node) nil
         (= (name key) (:key node)) (:value node)

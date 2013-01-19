@@ -7,3 +7,5 @@
 /.lein-plugins
 /storage.sublime-project
 /storage.sublime-workspace
+/.idea
+/storage.iml
