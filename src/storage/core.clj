@@ -22,21 +22,32 @@
   [key]
   (hash (name key)))
 
+(defn child-index [hash-bits]
+  (bit-and hash-bits 63))
+
+(defn next-hash-part [hash-bits]
+  (bit-shift-right hash-bits 6))
+
+; Create a list of hash parts instead?
+
 (defn node-path 
   "
   Reads the stored nodes matching the hash, deepest node first.
   (all hash bits may not be used)
   "
-  [in node-ptr hash-bits]
+  [in node-ptr hash-bits index-in-parent]
   (if (= 0 node-ptr)
     []
-    (let [node (io/unmarshal-node in node-ptr)]
+    (let [node (io/unmarshal-node in node-ptr)
+          node-with-index {:node node :index index-in-parent}]
       (if (io/leaf? node) 
-        [{:node node :hash (bit-and hash-bits 63)}]
-        (let [child-ptr ((:arcs node) (bit-and hash-bits 63))]
+        [node-with-index]
+        (let [child-ptr ((:arcs node) (child-index hash-bits))]
           (if (nil? child-ptr) 
-            [{:node node :hash (bit-and hash-bits 63)}]
-            (conj (node-path in child-ptr (bit-shift-right hash-bits 6)) {:node node :hash (bit-and hash-bits 63)})))))))
+            [node-with-index]
+            (conj (node-path in child-ptr (next-hash-part hash-bits) (child-index hash-bits)) node-with-index)))))))
+
+
 
 (defn store 
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
@@ -63,7 +74,7 @@
   ([key] (fetch *db* key))
   ([db key] 
     (let [in (:data @db)
-          node (:node (first (node-path in (io/root-node in) (hash-code key))))]
+          node (:node (first (node-path in (io/root-node in) (hash-code key) -1)))]
       (cond 
         (nil? node) nil
         (= (name key) (:key node)) (:value node)

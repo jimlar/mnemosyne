@@ -7,16 +7,16 @@
   (agent {:log nil :data (apply io/hexreader data)}))
 
 (fact "node-path on empty db gives empty list"
-  (node-path (io/hexreader "0000000000000000") 0 4711)
+  (node-path (io/hexreader "0000000000000000") 0 4711 -1)
   => [])
 
 (fact "node-path on leaf db gives list with leaf"
-  (node-path (io/hexreader "0000000000000012" "0000000161" "0000000162" "00000000000000080000000000000000") 18 97)
-  => [{:node (io/leaf "a" "b") :hash 33}])
+  (node-path (io/hexreader "0000000000000012" "0000000161" "0000000162" "00000000000000080000000000000000") 18 97 -1)
+  => [{:node (io/leaf "a" "b") :index -1}])
 
 (fact "node-path on arc-node with leaf db gives list with leaf and arc-node"
-  (node-path (io/hexreader "000000000000002A" "0000000161" "0000000162" "00000000000000080000000000000000" "0000000000000012" "00000000000000220000000200000000") 42 97)
-  => [{:node (io/leaf "a" "b") :hash 1} {:node (io/set-arc (io/empty-node) 33 18) :hash 33}])
+  (node-path (io/hexreader "000000000000002A" "0000000161" "0000000162" "00000000000000080000000000000000" "0000000000000012" "00000000000000220000000200000000") 42 97 -1)
+  => [{:node (io/leaf "a" "b") :index 33} {:node (io/set-arc (io/empty-node) 33 18) :index -1}])
 
 (fact "fetch on leaf node only returns leaf value"
   (fetch
