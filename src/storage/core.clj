@@ -9,8 +9,8 @@
   `(binding [*db* ~db] ~@body (close-db ~db)))
 
 (defn open-db
-  ([] (open-db (str (io/temp-dir))))
-  ([dir] (io/open-dir dir)))
+  ([] (open-db (str (io/temp-file))))
+  ([file] (io/open-file file)))
 
 (defn close-db [db]
   (io/close db))

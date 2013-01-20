@@ -1,26 +1,17 @@
 (ns storage.io
   (:require [clojure.java.io :as java-io]))
 
-(defn- ensure-dir [dir]
-  (.mkdirs (java-io/file dir)))
-
-(defn- logfile [dir]
-  (java-io/file dir "storage.log"))
-
-(defn- open-output [dir]
-  (let [out (java.io.RandomAccessFile. (logfile dir) "rws")]
+(defn- open-output [file]
+  (let [out (java.io.RandomAccessFile. file "rws")]
     (if (= 0 (.length out))
       (doall (repeatedly 8 #(.write out 0))))
     out))
 
-(defn temp-dir []
-  (doto 
-    (java.io.File/createTempFile "storage" ".tmp") 
-    (.delete)))
+(defn temp-file []
+  (java.io.File/createTempFile "storage" ".tmp")) 
 
-(defn open-dir [dir]
-  (ensure-dir dir)
-  (open-output dir))
+(defn open-file [file]
+  (open-output file))
 
 (defn close [db]
   (.close db))
