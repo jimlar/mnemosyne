@@ -58,7 +58,12 @@
              nodes-left (rest branch)]
           (cond 
             (nil? (:node node)) db 
-            (io/leaf? (:node node)) "do stuff: insert a new node, poiting ot both new leaf and old leaf (different indices)"
+            (io/leaf? (:node node)) 
+              "do stuff: ..."
+              ; Get the hashes of the existing leaf
+              ; Insert new nodes until we reach a node with different index for the two leafs
+              ; - recurse with the remaining nodes
+
             :else
               (do
                 (io/write-bytes db (io/marshal-node (io/set-arc (:node node) (hashes (:depth node)) (- (io/end-pointer) (io/node-size))) (io/end-pointer db)))
