@@ -40,13 +40,13 @@
   (seek-to [r pos] (.position r (int pos)))
   (read-bs [r bs] (.get r bs)))
 
-(defn read-bytes [in n]
+(defn read-bytes [db n]
   (let [bs (byte-array n)]
-    (read-bs in bs)
+    (read-bs db bs)
     bs))
 
-(defn seek [in pos]
-  (seek-to in pos))
+(defn seek [db pos]
+  (seek-to db pos))
 
 (defn hexdump 
   "Create a hex-string from a byte array or random access file"

@@ -48,13 +48,6 @@
             [node-with-index]
             (conj (node-path db child-ptr (next-hash-part hash-bits) (child-index hash-bits)) node-with-index)))))))
 
-(defn add-to-branch 
-  "
-  Adds a key/value to an existing branch, the branch is typically the result of calling node-path
-  "
-  [key value hash branch]
-  )
-
 (defn store 
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
   ([key value] (store *db* key value))
