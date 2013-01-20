@@ -31,12 +31,14 @@
     []
     (let [node (io/unmarshal-node db node-ptr)
           node-with-depth {:node node :depth depth}]
-      (if (io/leaf? node) 
-        [node-with-depth]
-        (let [child-ptr ((:arcs node) (nth hashes depth))]
-          (if (nil? child-ptr) 
-            [node-with-depth]
-            (conj (node-path db child-ptr hashes (+ depth 1)) node-with-depth)))))))
+      (cond
+        (io/leaf? node) [node-with-depth]
+        (>= depth (count hashes)) (throw (java.lang.IllegalStateException. "need to implement hash collision handling"))
+        :else
+          (let [child-ptr ((:arcs node) (first hashes))]
+            (if (nil? child-ptr) 
+              [node-with-depth]
+              (conj (node-path db child-ptr (rest hashes) (+ depth 1)) node-with-depth)))))))
 
 (defn store 
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
@@ -47,10 +49,9 @@
     ; walk the node path and add new nodes for the modified branch
     ; - If the first node in path is a leaf, insert a new node 
 
+
+
     (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
-
-
-
     (io/set-root-node db (- (io/end-pointer db) (io/node-size)))
     db))
 
