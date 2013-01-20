@@ -50,8 +50,20 @@
     ; - If the first node in path is a leaf, insert a new node 
 
 
+    (let [hashes (hash-codes key)
+          branch (node-path db (io/root-node db) hashes 0)]
 
-    (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
+      (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
+      (loop [node (first branch)
+             nodes-left (rest branch)]
+          (cond 
+            (nil? (:node node)) db 
+            (io/leaf? (:node node)) "do stuff: insert a new node, poiting ot both new leaf and old leaf (different indices)"
+            :else
+              (do
+                (io/write-bytes db (io/marshal-node (io/set-arc (:node node) (hashes (:depth node)) (- (io/end-pointer) (io/node-size))) (io/end-pointer db)))
+                (recur (first nodes-left) (rest nodes-left))))))
+
     (io/set-root-node db (- (io/end-pointer db) (io/node-size)))
     db))
 
