@@ -13,9 +13,6 @@
       (doall (repeatedly 8 #(.write out 0))))
     out))
 
-(defn- open-input [dir]
-  (java.io.RandomAccessFile. (logfile dir) "r"))
-
 (defn temp-dir []
   (doto 
     (java.io.File/createTempFile "storage" ".tmp") 
@@ -23,20 +20,19 @@
 
 (defn open-dir [dir]
   (ensure-dir dir)
-  {:log (open-output dir) :data (open-input dir)})
+  (open-output dir))
 
 (defn close [db]
-  (.close (:log db))
-  (.close (:data db)))
+  (.close db))
 
 (defn end-pointer [db]
-  (.length (:log db)))
+  (.length db))
 
 (defn write-bytes 
   ([db data] (write-bytes db data (end-pointer db)))
   ([db data pos] 
-    (.seek (:log db) pos)
-    (.write (:log db) data)
+    (.seek db pos)
+    (.write db data)
     db))
 
 (defprotocol SeekableInput
@@ -122,13 +118,13 @@
 
 (defn unmarshal-int
   "Reads 4 bytes from in and turns them into a 32-bit integer (assumes big endian)"
-  [in]
-  (.getInt (java.nio.ByteBuffer/wrap (read-bytes in 4)) 0))
+  [db]
+  (.getInt (java.nio.ByteBuffer/wrap (read-bytes db 4)) 0))
 
 (defn unmarshal-long
   "Reads 8 bytes from in and turns them into a 64-bit long (assumes big endian)"
-  [in]
-  (.getLong (java.nio.ByteBuffer/wrap (read-bytes in 8)) 0))
+  [db]
+  (.getLong (java.nio.ByteBuffer/wrap (read-bytes db 8)) 0))
 
 (defn marshal-string
   "Turn string into byte sequence for disk storage"
@@ -138,9 +134,9 @@
 
 (defn unmarshal-string
   "Read a string"
-  [in] 
-  (let [len (unmarshal-int in)]
-    (String. (read-bytes in len) "utf-8")))
+  [db] 
+  (let [len (unmarshal-int db)]
+    (String. (read-bytes db len) "utf-8")))
 
 (defn marshal-node
   "Create bytes from node, offset is added to all pointers"
@@ -156,28 +152,28 @@
 
 (defn unmarshal-arc-table 
   "Read arc pointer table into arc vector"
-  [arcbits in]
+  [arcbits db]
   (map 
     (fn [bit] 
       (if (bit-test arcbits bit)
-          (unmarshal-long in)
+          (unmarshal-long db)
           nil))
     (range 64)))
 
 (defn unmarshal-node
   "Read node from bytes"
-  [in position] 
-  (seek in position)
-    (let [pointer (unmarshal-long in)
-          arcbits (unmarshal-long in)]
-      (seek in pointer)
+  [db position] 
+  (seek db position)
+    (let [pointer (unmarshal-long db)
+          arcbits (unmarshal-long db)]
+      (seek db pointer)
       (if (= 0 arcbits) ; leaf node or arc node?
-        (leaf (unmarshal-string in) (unmarshal-string in))
-        (node arcbits (unmarshal-arc-table arcbits in)))))
+        (leaf (unmarshal-string db) (unmarshal-string db))
+        (node arcbits (unmarshal-arc-table arcbits db)))))
 
-(defn root-node [in]
-  (seek in 0)
-  (unmarshal-long in))
+(defn root-node [db]
+  (seek db 0)
+  (unmarshal-long db))
 
 (defn set-root-node [db ptr]
   (write-bytes db (marshal-long ptr) 0))

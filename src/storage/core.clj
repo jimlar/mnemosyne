@@ -10,12 +10,10 @@
 
 (defn open-db
   ([] (open-db (str (io/temp-dir))))
-  ([dir] (agent (io/open-dir dir))))
+  ([dir] (io/open-dir dir)))
 
 (defn close-db [db]
-  (send-off db io/close)
-  (await db)
-  db)
+  (io/close db))
 
 (defn hash-codes
   "Hash a string key, returns a list of the 6-bit parts of the hash code"
@@ -38,17 +36,17 @@
   Reads the stored nodes matching the hash, deepest node first.
   (all hash bits may not be used)
   "
-  [in node-ptr hash-bits index-in-parent]
+  [db node-ptr hash-bits index-in-parent]
   (if (= 0 node-ptr)
     []
-    (let [node (io/unmarshal-node in node-ptr)
+    (let [node (io/unmarshal-node db node-ptr)
           node-with-index {:node node :index index-in-parent}]
       (if (io/leaf? node) 
         [node-with-index]
         (let [child-ptr ((:arcs node) (child-index hash-bits))]
           (if (nil? child-ptr) 
             [node-with-index]
-            (conj (node-path in child-ptr (next-hash-part hash-bits) (child-index hash-bits)) node-with-index)))))))
+            (conj (node-path db child-ptr (next-hash-part hash-bits) (child-index hash-bits)) node-with-index)))))))
 
 (defn add-to-branch 
   "
@@ -61,28 +59,23 @@
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
   ([key value] (store *db* key value))
   ([db key value] 
-    (send-off 
-      db
-      (fn [db]
 
-        ; Find the node path for the hashed key,
-        ; walk the node path and add new nodes for the modified branch
-        ; - If the first node in path is a leaf, insert a new node 
+    ; Find the node path for the hashed key,
+    ; walk the node path and add new nodes for the modified branch
+    ; - If the first node in path is a leaf, insert a new node 
 
-        (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
+    (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
 
 
 
-        (io/set-root-node db (- (io/end-pointer db) (io/node-size)))))
-    (await db)
+    (io/set-root-node db (- (io/end-pointer db) (io/node-size)))
     db))
 
 (defn fetch 
   "Fetch a value for a key, returns nil if not found"
   ([key] (fetch *db* key))
   ([db key] 
-    (let [in (:data @db)
-          node (:node (first (node-path in (io/root-node in) (hash-code key) -1)))]
+    (let [node (:node (first (node-path db (io/root-node db) (hash-code key) -1)))]
       (cond 
         (nil? node) nil
         (= (name key) (:key node)) (:value node)

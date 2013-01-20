@@ -4,7 +4,7 @@
   (:require [storage.io :as io]))
   
 (defn mock-read-db [& data]
-  (agent {:log nil :data (apply io/hexreader data)}))
+  (apply io/hexreader data))
 
 (fact "node-path on empty db gives empty list"
   (node-path (io/hexreader "0000000000000000") 0 4711 -1)
@@ -27,7 +27,7 @@
 (fact "store on empty db stores a leaf"
   (let [db (open-db)]
     (store db :a "b")
-    (io/hexdump (:data @db)))
+    (io/hexdump db))
   => "00000000000000120000000161000000016200000000000000080000000000000000")
 
 (fact "store single key value on empty db can be read back"
