@@ -55,3 +55,7 @@
     (store db :the-other-key "the other value")
     [(fetch db :the-key) (fetch db :the-other-key)])
   => ["the value" "the other value"])
+
+(fact "hash-code splits hash into 6 bit parts, lest significant first"
+  (hash-codes "a")
+  => [33, 1, 0, 0, 0, 0, 0, 0, 0, 0])

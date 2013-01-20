@@ -17,18 +17,21 @@
   (await db)
   db)
 
-(defn hash-code 
-  "Hash a string key"
+(defn hash-codes
+  "Hash a string key, returns a list of the 6-bit parts of the hash code"
   [key]
-  (hash (name key)))
+  (let [code (hash key)]
+    (map #(bit-and (bit-shift-right code (* 6 %1)) 63) (range 0 10))))
+
+(defn hash-code 
+  [key]
+  (hash key))
 
 (defn child-index [hash-bits]
   (bit-and hash-bits 63))
 
 (defn next-hash-part [hash-bits]
   (bit-shift-right hash-bits 6))
-
-; Create a list of hash parts instead?
 
 (defn node-path 
   "
@@ -47,7 +50,12 @@
             [node-with-index]
             (conj (node-path in child-ptr (next-hash-part hash-bits) (child-index hash-bits)) node-with-index)))))))
 
-
+(defn add-to-branch 
+  "
+  Adds a key/value to an existing branch, the branch is typically the result of calling node-path
+  "
+  [key value hash branch]
+  )
 
 (defn store 
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
