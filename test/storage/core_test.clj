@@ -62,9 +62,9 @@
 
 (fact "grow branch should replace leaf with new nodes until hashes differ"
   (grow-branch [(io/leaf 18 "a" "b" 0)] [33 1 0 0 0 0 0 0 0 0] [33 2 0 0 0 0 0 0 0 0])
-  => [(io/set-arc (io/node) 1 18) (io/node)]
+  => [(io/node) (io/set-arc (io/node) 1 18)]
   (grow-branch [(io/leaf 18 "a" "b" 0)] [33 1 0 0 0 0 0 0 0 0] [33 1 0 0 0 0 0 0 0 1])
-  => [(io/set-arc (io/node) 0 18) (io/node) (io/node) (io/node) (io/node) (io/node) (io/node) (io/node) (io/node) (io/node)])
+  => [(io/node) (io/node) (io/node) (io/node) (io/node) (io/node) (io/node) (io/node) (io/node) (io/set-arc (io/node) 0 18)])
 
 (fact "hash-code splits hash into 6 bit parts, lest significant first"
   (hash-codes "a")

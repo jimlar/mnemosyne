@@ -45,8 +45,8 @@
   (loop [depth (:depth leaf)
          branch branch]
     (if (= (nth leaf-hashes depth) (nth insert-hashes depth))
-      (recur (+ 1 depth) (conj branch (io/node)))
-      (conj branch (io/set-arc (io/node) (nth leaf-hashes depth) (:pos leaf))))))
+      (recur (+ 1 depth) (cons (io/node) branch))
+      (concat branch (list (io/set-arc (io/node) (nth leaf-hashes depth) (:pos leaf)))))))
 
 (defn store
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
