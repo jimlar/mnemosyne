@@ -1,4 +1,5 @@
 (ns storage.core
+  (:import [clojure pprint__init])
   (:require [storage.io :as io]))
 
 (def ^:private ^:dynamic *db* nil)
@@ -18,7 +19,7 @@
 (defn hash-codes
   "Hash a string key, returns a list of the 6-bit parts of the hash code"
   [key]
-  (let [code (hash key)]
+  (let [code (hash (name key))]
     (map #(bit-and (bit-shift-right code (* 6 %1)) 63) (range 0 10))))
 
 (defn node-path 
@@ -45,7 +46,11 @@
          branch branch]
     (if (= (nth leaf-hashes depth) (nth insert-hashes depth))
       (recur (+ 1 depth) (conj branch (io/node :depth depth)))
-      (conj branch (io/set-arc (io/node :depth depth) (nth leaf-hashes depth) (:pos leaf))))))
+      (conj
+        branch
+        (let [new-node (io/set-arc (io/node :depth depth) (nth leaf-hashes depth) (:pos leaf))]
+          #_(print (str "Modified node, arcno " (nth leaf-hashes depth) ", pos " (:pos leaf) ", leaf-hashes " (vec leaf-hashes) ", node: " new-node "\n"))
+          new-node)))))
 
 (defn store
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
@@ -59,11 +64,15 @@
           branch (node-path db (io/root-node db) hashes 0)
           first-node (first branch)
           branch (if (io/leaf? first-node)
-                    (grow-branch branch (hash-codes (:key first-node)) hashes)
-                    branch)]
+                    (if (= key (:key first-node))
+                      (rest branch)
+                      (grow-branch branch (hash-codes (:key first-node)) hashes))
+                    branch)
+          new-leaf (io/leaf key value)]
 
       ; Write the new leaf
-      (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
+      #_(print (str "Writing new leaf to " (io/end-pointer db) ", hashes " (vec hashes) ", " new-leaf "\n"))
+      (io/write-bytes db (io/marshal-node new-leaf (io/end-pointer db)))
 
       ; Write the grown branch, deepest node first, modifying the arc pointers for the branch processed
       (dorun
@@ -71,7 +80,9 @@
           (io/write-bytes
             db
             (io/marshal-node
-              (io/set-arc node (nth hashes (:depth node)) (- (io/end-pointer db) (io/node-size)))
+              (let [node (io/set-arc node (nth hashes (:depth node)) (- (io/end-pointer db) (io/node-size)))]
+                #_(print (str "Writing key " key ", hash " (vec hashes) ", node " node "\n"))
+                node)
               (io/end-pointer db))))))
 
     (io/set-root-node db (- (io/end-pointer db) (io/node-size)))
@@ -80,8 +91,11 @@
 (defn fetch 
   "Fetch a value for a key, returns nil if not found"
   ([key] (fetch *db* key))
-  ([db key] 
-    (let [node (first (node-path db (io/root-node db) (hash-codes key) 0))]
+  ([db key]
+    (let [hash (hash-codes key)
+          path (node-path db (io/root-node db) hash 0)
+          node (first path)]
+      #_(print (str "Fetching " key ", hash " (vec hash) ", path " path "\n"))
       (cond 
         (nil? node) nil
         (= (name key) (:key node)) (:value node)

@@ -21,39 +21,39 @@
 (fact "fetch on leaf node only returns leaf value"
   (fetch
     (mock-read-db "0000000000000012" "0000000161" "0000000162" "00000000000000080000000000000000")
-    :a)
+    "a")
   => "b")
 
 (fact "store on empty db stores a leaf"
   (let [db (open-db)]
-    (store db :a "b")
+    (store db "a" "b")
     (io/hexdump db))
   => "00000000000000120000000161000000016200000000000000080000000000000000")
 
 (fact "store single key value on empty db can be read back"
   (let [db (open-db)]
-    (store db :the-key "the value")
-    (fetch db :the-key))
+    (store db "the-key" "the value")
+    (fetch db "the-key"))
   => "the value")
 
 (fact "store single key value on empty db gives nil back for other key"
   (let [db (open-db)]
-    (store db :the-key "the value")
-    (fetch db :the-other-key))
+    (store db "the-key" "the value")
+    (fetch db "the-other-key"))
   => nil)
 
 (fact "store same key twice on empty db overwrites old value"
   (let [db (open-db)]
-    (store db :the-key "the value")
-    (store db :the-key "the other value")
-    (fetch db :the-key))
+    (store db "the-key" "the value")
+    (store db "the-key" "the other value")
+    (fetch db "the-key"))
   => "the other value")
 
 (fact "store two key/values on empty db can both be read back"
   (let [db (open-db)]
-    (store db :the-key "the value")
-    (store db :the-other-key "the other value")
-    [(fetch db :the-key) (fetch db :the-other-key)])
+    (store db "the-key" "the value")
+    (store db "the-other-key" "the other value")
+    [(fetch db "the-key") (fetch db "the-other-key")])
   => ["the value" "the other value"])
 
 (fact "grow branch should replace leaf with new node pointing to leaf"
@@ -78,7 +78,7 @@
 (fact "hash-code splits hash into 6 bit parts, lest significant first"
   (hash-codes "a")
   => [33 1 0 0 0 0 0 0 0 0]
-  (hash-codes :the-key)
-  => [51 55 62 33 39 1 0 0 0 0]
-  (hash-codes :the-other-key)
-  => [37 54 61 30 45 62 63 63 63 63])
+  (hash-codes "the-key")
+  => [3 12 3 28 47 62 63 63 63 63]
+  (hash-codes "the-other-key")
+  => [6 15 1 40 46 1 0 0 0 0])
