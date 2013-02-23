@@ -68,7 +68,7 @@
 
 (fact "arc-node is marshalled with arc pointer table"
   (unmarshal-node (hexreader "0000000000001267" "0000000000000000" "0000000000000004") 8)
-  => (set-arc (node 8) 2 4711))
+  => (set-arc (node :pos 8) 2 4711))
 
 (fact "root-node read from start of file"
   (root-node (hexreader "0000000000000010" "0000000161" "0000000162" "0000000000000008" "0000000000000000"))

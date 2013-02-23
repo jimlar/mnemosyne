@@ -69,14 +69,19 @@
 
 (defn node-size [] 16)
 
+;(defn node
+;  "Create a HAMT node with optional position, arcbits and arc pointers"
+;  ([] (node nil))
+;  ([pos] (node pos 0 (repeat 64 nil)))
+;  ([arcbits arcs] (node nil arcbits arcs))
+;  ([pos arcbits arcs] {:pos pos :arcbits (long arcbits) :arcs (vec arcs)}))
+
 (defn node
   "Create a HAMT node with optional position, arcbits and arc pointers"
-  ([] (node nil))
-  ([pos] (node pos 0 (repeat 64 nil)))
-  ([arcbits arcs] (node nil arcbits arcs))
-  ([pos arcbits arcs] {:pos pos :arcbits (long arcbits) :arcs (vec arcs)}))
+  [& {:keys [pos arcbits arcs depth] :or {pos nil arcbits 0 arcs (repeat 64 nil) depth nil}}]
+  {:pos pos :arcbits arcbits :arcs (vec arcs) :depth depth})
 
-(defn set-arc 
+(defn set-arc
   "Change one arc of a node"
   [node arc-no arc-ptr]
   (assoc 
@@ -87,7 +92,7 @@
 (defn leaf
   "A HAMT leaf node, with a key and a value"
   ([key value] (leaf nil key value))
-  ([pos key value] (assoc (node pos) :key key :value value))
+  ([pos key value] (assoc (node :pos pos) :key key :value value))
   ([pos key value depth] (assoc (leaf pos key value) :depth depth)))
 
 (defn leaf?
@@ -151,14 +156,16 @@
 
 (defn unmarshal-node
   "Read node from bytes"
-  [db position] 
-  (seek db position)
-    (let [pointer (unmarshal-long db)
-          arcbits (unmarshal-long db)]
-      (seek db pointer)
-      (if (= 0 arcbits) ; leaf node or arc node?
-        (leaf position (unmarshal-string db) (unmarshal-string db))
-        (node position arcbits (unmarshal-arc-table arcbits db)))))
+  ([db position depth]
+    (assoc (unmarshal-node db position) :depth depth))
+  ([db position]
+    (seek db position)
+      (let [pointer (unmarshal-long db)
+            arcbits (unmarshal-long db)]
+        (seek db pointer)
+        (if (= 0 arcbits) ; leaf node or arc node?
+          (leaf position (unmarshal-string db) (unmarshal-string db))
+          (node :pos position :arcbits arcbits :arcs (unmarshal-arc-table arcbits db))))))
 
 (defn root-node [db]
   (seek db 0)

@@ -29,24 +29,23 @@
   [db node-ptr hashes depth]
   (if (= 0 node-ptr)
     []
-    (let [node (io/unmarshal-node db node-ptr)
-          node-with-depth {:node node :depth depth}]
+    (let [node (io/unmarshal-node db node-ptr depth)]
       (cond
-        (io/leaf? node) [node-with-depth]
+        (io/leaf? node) [node]
         (>= depth (count hashes)) (throw (java.lang.IllegalStateException. "need to implement hash collision handling"))
         :else
           (let [child-ptr ((:arcs node) (first hashes))]
             (if (nil? child-ptr) 
-              [node-with-depth]
-              (conj (node-path db child-ptr (rest hashes) (+ depth 1)) node-with-depth)))))))
+              [node]
+              (conj (node-path db child-ptr (rest hashes) (+ depth 1)) node)))))))
 
 (defn grow-branch [[leaf & branch] leaf-hashes insert-hashes]
   "Modify an existing branch for insertion of the insert hash key"
   (loop [depth (:depth leaf)
          branch branch]
     (if (= (nth leaf-hashes depth) (nth insert-hashes depth))
-      (recur (+ 1 depth) (cons (io/node) branch))
-      (concat branch (list (io/set-arc (io/node) (nth leaf-hashes depth) (:pos leaf)))))))
+      (recur (+ 1 depth) (conj branch (io/node :depth depth)))
+      (conj branch (io/set-arc (io/node :depth depth) (nth leaf-hashes depth) (:pos leaf))))))
 
 (defn store
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
@@ -60,7 +59,7 @@
 
     (let [hashes (hash-codes key)
           branch (node-path db (io/root-node db) hashes 0)
-          first-node (:node (first branch))
+          first-node (first branch)
           branch (if (io/leaf? first-node)
                     (grow-branch branch (hash-codes (:key first-node)) hashes)
                     branch)]
@@ -72,11 +71,16 @@
       (loop [node (first branch)
              nodes-left (rest branch)]
           (cond 
-            (nil? (:node node)) db 
+            (nil? node) db
             :else
               (do
-                (io/write-bytes db (io/marshal-node (io/set-arc (:node node) (hashes (:depth node)) (- (io/end-pointer) (io/node-size))) (io/end-pointer db)))
-                (recur (first nodes-left) (rest nodes-left))))))
+                (io/write-bytes db
+                  (io/marshal-node
+                    (io/set-arc node (nth hashes (:depth node)) (- (io/end-pointer db) (io/node-size)))
+                    (io/end-pointer db)))
+                (recur
+                  (first nodes-left)
+                  (rest nodes-left))))))
 
     (io/set-root-node db (- (io/end-pointer db) (io/node-size)))
     db))
@@ -85,7 +89,7 @@
   "Fetch a value for a key, returns nil if not found"
   ([key] (fetch *db* key))
   ([db key] 
-    (let [node (:node (first (node-path db (io/root-node db) (hash-codes key) 0)))]
+    (let [node (first (node-path db (io/root-node db) (hash-codes key) 0))]
       (cond 
         (nil? node) nil
         (= (name key) (:key node)) (:value node)
