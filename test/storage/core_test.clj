@@ -82,3 +82,10 @@
   => [3 12 3 28 47 62 63 63 63 63]
   (hash-codes "the-other-key")
   => [6 15 1 40 46 1 0 0 0 0])
+
+
+(fact "100 keys can be stored and read back"
+  (let [db (open-db)]
+    (dorun (map #(store db (str "the-key-" %1) (str "the value " %1)) (range 100)))
+    (vec (map #(fetch db (str "the-key-" %1)) (range 100))))
+  => (vec (map #(str "the value " %1) (range 100))))
