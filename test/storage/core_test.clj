@@ -56,6 +56,20 @@
     [(fetch db :the-key) (fetch db :the-other-key)])
   => ["the value" "the other value"])
 
+(fact "grow branch should replace leaf with new node pointing to leaf"
+  (grow-branch [(io/leaf 18 "a" "b" 0)] [33 1 0 0 0 0 0 0 0 0] [34 1 0 0 0 0 0 0 0 0])
+  => [(io/set-arc (io/node) 33 18)])
+
+(fact "grow branch should replace leaf with new nodes until hashes differ"
+  (grow-branch [(io/leaf 18 "a" "b" 0)] [33 1 0 0 0 0 0 0 0 0] [33 2 0 0 0 0 0 0 0 0])
+  => [(io/set-arc (io/node) 1 18) (io/node)]
+  (grow-branch [(io/leaf 18 "a" "b" 0)] [33 1 0 0 0 0 0 0 0 0] [33 1 0 0 0 0 0 0 0 1])
+  => [(io/set-arc (io/node) 0 18) (io/node) (io/node) (io/node) (io/node) (io/node) (io/node) (io/node) (io/node) (io/node)])
+
 (fact "hash-code splits hash into 6 bit parts, lest significant first"
   (hash-codes "a")
-  => [33, 1, 0, 0, 0, 0, 0, 0, 0, 0])
+  => [33 1 0 0 0 0 0 0 0 0]
+  (hash-codes :the-key)
+  => [51 55 62 33 39 1 0 0 0 0]
+  (hash-codes :the-other-key)
+  => [37 54 61 30 45 62 63 63 63 63])

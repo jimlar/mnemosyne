@@ -40,16 +40,18 @@
               [node-with-depth]
               (conj (node-path db child-ptr (rest hashes) (+ depth 1)) node-with-depth)))))))
 
-; Insert new nodes until we reach a node with different index for the two leafs
-; - recurse with the remaining nodes
-(defn insert-subtree [[leaf & branch] hashes]
-  (let [leaf-hashes (hash-codes (:key leaf))]
-    (conj branch (io/set-arc (io/node) (nth leaf-hashes (:depth leaf)) (:pos leaf)))))
+(defn grow-branch [[leaf & branch] leaf-hashes insert-hashes]
+  "Modify an existing branch for insertion of the insert hash key"
+  (loop [depth (:depth leaf)
+         branch branch]
+    (if (= (nth leaf-hashes depth) (nth insert-hashes depth))
+      (recur (+ 1 depth) (conj branch (io/node)))
+      (conj branch (io/set-arc (io/node) (nth leaf-hashes depth) (:pos leaf))))))
 
-(defn store 
+(defn store
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
   ([key value] (store *db* key value))
-  ([db key value] 
+  ([db key value]
 
     ; Find the node path for the hashed key,
     ; walk the node path and add new nodes for the modified branch
@@ -58,8 +60,9 @@
 
     (let [hashes (hash-codes key)
           branch (node-path db (io/root-node db) hashes 0)
-          branch (if (io/leaf? (:node (first branch)))
-                    (insert-subtree branch hashes)
+          first-node (:node (first branch))
+          branch (if (io/leaf? first-node)
+                    (grow-branch branch (hash-codes (:key first-node)) hashes)
                     branch)]
 
       ; Write the new leaf

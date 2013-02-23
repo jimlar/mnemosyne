@@ -87,7 +87,8 @@
 (defn leaf
   "A HAMT leaf node, with a key and a value"
   ([key value] (leaf nil key value))
-  ([pos key value] (assoc (node pos) :key key :value value)))
+  ([pos key value] (assoc (node pos) :key key :value value))
+  ([pos key value depth] (assoc (leaf pos key value) :depth depth)))
 
 (defn leaf?
   "Return true if node is a leaf"
