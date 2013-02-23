@@ -54,8 +54,6 @@
 
     ; Find the node path for the hashed key,
     ; walk the node path and add new nodes for the modified branch
-    ; - If the first node in path is a leaf, insert a new node 
-
 
     (let [hashes (hash-codes key)
           branch (node-path db (io/root-node db) hashes 0)
@@ -67,20 +65,14 @@
       ; Write the new leaf
       (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
 
-      ; Write the new branch
-      (loop [node (first branch)
-             nodes-left (rest branch)]
-          (cond 
-            (nil? node) db
-            :else
-              (do
-                (io/write-bytes db
-                  (io/marshal-node
-                    (io/set-arc node (nth hashes (:depth node)) (- (io/end-pointer db) (io/node-size)))
-                    (io/end-pointer db)))
-                (recur
-                  (first nodes-left)
-                  (rest nodes-left))))))
+      ; Write the grown branch, deepest node first, modifying the arc pointers for the branch processed
+      (dorun
+        (for [node branch]
+          (io/write-bytes
+            db
+            (io/marshal-node
+              (io/set-arc node (nth hashes (:depth node)) (- (io/end-pointer db) (io/node-size)))
+              (io/end-pointer db))))))
 
     (io/set-root-node db (- (io/end-pointer db) (io/node-size)))
     db))
