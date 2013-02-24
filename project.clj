@@ -3,9 +3,10 @@
   :url "https://github.com/jimlar/mnemosyne"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.4.0"]]
+  :dependencies [[org.clojure/clojure "1.4.0"]
+                 [aleph "0.3.0-beta13"]]
   :repositories {"stuart" "http://stuartsierra.com/maven2"}
-;  :main mnemosyne.main
+  :main mnemosyne.server
   :profiles {
     :dev {
       :plugins [[lein-midje "2.0.3"]]

@@ -1,5 +1,4 @@
 (ns mnemosyne.hamt
-  (:import [clojure pprint__init])
   (:require [mnemosyne.io :as io]))
 
 ;;;;;;;;;;;;;;;;;; hash related fns ;;;;;;;;;;;;;;;;;;
