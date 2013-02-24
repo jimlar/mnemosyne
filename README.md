@@ -1,21 +1,24 @@
-# storage
+# MnemosyneDB
 
 The database that never forgets
 
 Note: this is work in progress, expect everything to blow up.
 
+http://en.wikipedia.org/wiki/Mnemosyne
+
 ## Status
-* Lock free concurrent read/write on disk HAMT almost there
+* Lock free concurrent read/write on disk HAMT
 
-## TODO
+## TODO / Open questions
 
+* Will the on disk HAMT work with replication?
+* Skip replication?
 * Key/hint-tables in memory?
-* Synchronization, vector clocks, distributes time - NTP
+* Synchronization, vector clocks, distributes time - NTP?
 * Transactions or not?
-* How to manage files open for read and write
-* Use gloss for binary: https://github.com/ztellman/gloss/wiki/Introduction
+* How to manage files open for read and write - mmap?
 
-## Asumptions/decisions
+## Assumptions/decisions
 
 * Big endian on disk
 * All strings UTF-8
