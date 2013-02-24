@@ -4,22 +4,32 @@
             [gloss.core :as gloss]
             [clojure.string :as string]))
 
+;;;;;;;;;;;;;;;;;; Protocol commands;;;;;;;;;;;;;;;;;;
 
-;;;;;;;;;;;;;;;;;; Line protocol ;;;;;;;;;;;;;;;;;;
+(defmulti execute-command :command)
+
+
+(defmethod execute-command :put [command]
+  (str "You want to PUT " command))
+
+(defmethod execute-command :default [command]
+  (str "Unknown command " (name (:command command))))
+
+;;;;;;;;;;;;;;;;;; Protocol parsing ;;;;;;;;;;;;;;;;;;
 
 (defn parse-line [line]
   (let [split-line (re-find #"^(\w+) ?(.*)$" line)
         command (nth split-line 1)
-        command (if (nil? command) nil (string/upper-case command))
+        command (if (nil? command) nil (string/lower-case command))
         argument (nth split-line 2)]
     (cond
-      (= 0 (count command)) []
-      (= 0 (count argument)) [command]
-      :else [command argument])))
+      (= 0 (count command)) {}
+      (= 0 (count argument)) {:command (keyword command)}
+      :else {:command (keyword command) :args argument})))
 
-(defn execute-command [line]
+(defn parse-and-execute [line]
   (let [command (parse-line line)]
-    (str "You said to execute " command)))
+    (execute-command command)))
 
 ;;;;;;;;;;;;;;;;;; TCP Server ;;;;;;;;;;;;;;;;;;
 
@@ -32,4 +42,4 @@
   (print (str "Started on port " port "\n")))
 
 (defn -main [& m]
-  (start-server 10000 execute-command))
+  (start-server 10000 parse-and-execute))
