@@ -1,8 +1,8 @@
-(ns storage.io
+(ns mnemosyne.io
   (:require [clojure.java.io :as java-io]))
 
 (defn temp-file []
-  (java.io.File/createTempFile "storage" ".tmp")) 
+  (java.io.File/createTempFile "mnemosyne" ".tmp"))
 
 (defn open-db
   ([] (open-db (str (temp-file))))

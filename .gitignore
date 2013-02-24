@@ -5,7 +5,5 @@
 /.lein-deps-sum
 /.lein-failures
 /.lein-plugins
-/storage.sublime-project
-/storage.sublime-workspace
 /.idea
-/storage.iml
+/mnemosyne.iml

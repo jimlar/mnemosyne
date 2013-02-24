@@ -1,6 +1,6 @@
-(ns storage.io-test
+(ns mnemosyne.io-test
   (:use midje.sweet)
-  (:use storage.io))
+  (:use mnemosyne.io))
 
 (fact "hexreader decodes 4711 properly"
   (apply list (read-bytes (hexreader "4711") 2))

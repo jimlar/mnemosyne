@@ -1,7 +1,7 @@
-(ns storage.hamt-test
+(ns mnemosyne.hamt-test
   (:use midje.sweet)
-  (:use storage.hamt)
-  (:require [storage.io :as io]))
+  (:use mnemosyne.hamt)
+  (:require [mnemosyne.io :as io]))
   
 (defn mock-read-db [& data]
   (apply io/hexreader data))

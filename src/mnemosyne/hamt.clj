@@ -1,6 +1,6 @@
-(ns storage.hamt
+(ns mnemosyne.hamt
   (:import [clojure pprint__init])
-  (:require [storage.io :as io]))
+  (:require [mnemosyne.io :as io]))
 
 ;;;;;;;;;;;;;;;;;; hash related fns ;;;;;;;;;;;;;;;;;;
 

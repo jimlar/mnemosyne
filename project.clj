@@ -1,11 +1,11 @@
 (defproject mnemosynedb "0.1.0-SNAPSHOT"
   :description "The database that never forgets"
-  :url "http://example.com/FIXME"
+  :url "https://github.com/jimlar/mnemosyne"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.4.0"]]
   :repositories {"stuart" "http://stuartsierra.com/maven2"}
-;  :main storage.main
+;  :main mnemosyne.main
   :profiles {
     :dev {
       :plugins [[lein-midje "2.0.3"]]
