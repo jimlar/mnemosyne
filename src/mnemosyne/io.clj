@@ -1,11 +1,10 @@
 (ns mnemosyne.io
   (:require [clojure.java.io :as java-io]))
 
-(defn temp-file []
-  (java.io.File/createTempFile "mnemosyne" ".tmp"))
+;;;;;;;;;;;;;;;;;; disk io ;;;;;;;;;;;;;;;;;;
 
 (defn open-db
-  ([] (open-db (str (temp-file))))
+  ([] (open-db (str (java.io.File/createTempFile "mnemosyne" ".tmp"))))
   ([file]
     (let [out (java.io.RandomAccessFile. file "rws")]
       (if (= 0 (.length out))
@@ -47,7 +46,9 @@
 (defn seek [db pos]
   (seek-to db pos))
 
-(defn hexdump 
+;;;;;;;;;;;;;;;;;; hex dump and read ;;;;;;;;;;;;;;;;;;
+
+(defn hexdump
   "Create a hex-string from a byte array or random access file"
   [barray]
   (if (instance? java.io.RandomAccessFile barray)
@@ -65,6 +66,8 @@
       (map #(byte (Integer/parseInt % 16)) 
            (map #(apply str %) 
                 (partition-all 2 (apply str strs)))))))
+
+;;;;;;;;;;;;;;;;;; mashal and unmarshaling ;;;;;;;;;;;;;;;;;;
 
 (defn marshal-int
   "Turns a 32-bit int into a 4 byte array (assumes big endian)"
@@ -97,6 +100,8 @@
   [db] 
   (let [len (unmarshal-int db)]
     (String. (read-bytes db len) "utf-8")))
+
+;;;;;;;;;;;;;;;;;; latest root node pointer ;;;;;;;;;;;;;;;;;;
 
 (defn root-node-ptr [db]
   (seek db 0)
