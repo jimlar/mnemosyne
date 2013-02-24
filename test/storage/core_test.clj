@@ -25,32 +25,32 @@
   => "b")
 
 (fact "store on empty db stores a leaf"
-  (let [db (open-db)]
+  (let [db (io/open-db)]
     (store db "a" "b")
     (io/hexdump db))
   => "00000000000000120000000161000000016200000000000000080000000000000000")
 
 (fact "store single key value on empty db can be read back"
-  (let [db (open-db)]
+  (let [db (io/open-db)]
     (store db "the-key" "the value")
     (fetch db "the-key"))
   => "the value")
 
 (fact "store single key value on empty db gives nil back for other key"
-  (let [db (open-db)]
+  (let [db (io/open-db)]
     (store db "the-key" "the value")
     (fetch db "the-other-key"))
   => nil)
 
 (fact "store same key twice on empty db overwrites old value"
-  (let [db (open-db)]
+  (let [db (io/open-db)]
     (store db "the-key" "the value")
     (store db "the-key" "the other value")
     (fetch db "the-key"))
   => "the other value")
 
 (fact "store two key/values on empty db can both be read back"
-  (let [db (open-db)]
+  (let [db (io/open-db)]
     (store db "the-key" "the value")
     (store db "the-other-key" "the other value")
     [(fetch db "the-key") (fetch db "the-other-key")])
@@ -85,7 +85,7 @@
 
 
 (fact "100 keys can be stored and read back"
-  (let [db (open-db)]
+  (let [db (io/open-db)]
     (dorun (map #(store db (str "the-key-" %1) (str "the value " %1)) (range 100)))
     (vec (map #(fetch db (str "the-key-" %1)) (range 100))))
   => (vec (map #(str "the value " %1) (range 100))))

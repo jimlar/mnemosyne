@@ -2,24 +2,10 @@
   (:import [clojure pprint__init])
   (:require [storage.io :as io]))
 
-(def ^:private ^:dynamic *db* nil)
-
-(defmacro with-open-db 
-  "Evaluate body with db as the current database and close db after"
-  [db & body] 
-  `(binding [*db* ~db] ~@body (close-db ~db)))
-
-(defn open-db
-  ([] (open-db (str (io/temp-file))))
-  ([file] (io/open-file file)))
-
-(defn close-db [db]
-  (io/close db))
-
 (defn hash-codes
   "Hash a string key, returns a list of the 6-bit parts of the hash code"
-  [key]
-  (let [code (hash (name key))]
+  [^String key]
+  (let [code (hash key)]
     (map #(bit-and (bit-shift-right code (* 6 %1)) 63) (range 0 10))))
 
 (defn node-path 
@@ -52,10 +38,9 @@
 
 (defn store
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
-  ([key value] (store *db* key value))
-  ([db key value]
+  [db key value]
     (let [hashes (hash-codes key)
-          branch (node-path db (io/root-node db) hashes 0)
+          branch (node-path db (io/root-node-ptr db) hashes 0)
           first-node (first branch)
           branch (if (io/leaf? first-node)
                     (if (= key (:key first-node))
@@ -75,15 +60,14 @@
               (io/set-arc node (nth hashes (:depth node)) (- (io/end-pointer db) (io/node-size)))
               (io/end-pointer db))))))
 
-    (io/set-root-node db (- (io/end-pointer db) (io/node-size)))
-    db))
+    (io/save-root-node-ptr db (- (io/end-pointer db) (io/node-size)))
+    db)
 
 (defn fetch 
   "Fetch a value for a key, returns nil if not found"
-  ([key] (fetch *db* key))
-  ([db key]
-    (let [node (first (node-path db (io/root-node db) (hash-codes key) 0))]
+  [db key]
+    (let [node (first (node-path db (io/root-node-ptr db) (hash-codes key) 0))]
       (cond
         (nil? node) nil
         (= (name key) (:key node)) (:value node)
-        :else nil))))
+        :else nil)))

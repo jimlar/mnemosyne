@@ -1,19 +1,18 @@
 (ns storage.io
   (:require [clojure.java.io :as java-io]))
 
-(defn- open-output [file]
-  (let [out (java.io.RandomAccessFile. file "rws")]
-    (if (= 0 (.length out))
-      (doall (repeatedly 8 #(.write out 0))))
-    out))
-
 (defn temp-file []
   (java.io.File/createTempFile "storage" ".tmp")) 
 
-(defn open-file [file]
-  (open-output file))
+(defn open-db
+  ([] (open-db (str (temp-file))))
+  ([file]
+    (let [out (java.io.RandomAccessFile. file "rws")]
+      (if (= 0 (.length out))
+        (doall (repeatedly 8 #(.write out 0))))
+      out)))
 
-(defn close [db]
+(defn close-db [db]
   (.close db))
 
 (defn end-pointer [db]
@@ -67,30 +66,6 @@
            (map #(apply str %) 
                 (partition-all 2 (apply str strs)))))))
 
-(defn node-size [] 16)
-
-(defn node
-  "Create a HAMT node with optional position, arcbits and arc pointers"
-  [& {:keys [pos arcbits arcs depth] :or {pos nil arcbits 0 arcs (repeat 64 nil) depth nil}}]
-  {:pos pos :arcbits arcbits :arcs (vec arcs) :depth depth})
-
-(defn set-arc
-  "Change one arc of a node"
-  [node arc-no arc-ptr]
-  (assoc 
-    node 
-    :arcbits (long (bit-set (:arcbits node) arc-no))
-    :arcs (assoc (:arcs node) arc-no arc-ptr)))
-
-(defn leaf
-  "A HAMT leaf node, with a key and a value"
-  [key value & node-params] (assoc (apply node node-params) :key key :value value))
-
-(defn leaf?
-  "Return true if node is a leaf"
-  [node] 
-  (= 0 (:arcbits node)))
-
 (defn marshal-int
   "Turns a 32-bit int into a 4 byte array (assumes big endian)"
   [i]
@@ -122,6 +97,37 @@
   [db] 
   (let [len (unmarshal-int db)]
     (String. (read-bytes db len) "utf-8")))
+
+(defn root-node-ptr [db]
+  (seek db 0)
+  (unmarshal-long db))
+
+(defn save-root-node-ptr [db ptr]
+  (write-bytes db (marshal-long ptr) 0))
+
+(defn node-size [] 16)
+
+(defn node
+  "Create a HAMT node with optional position, arcbits and arc pointers"
+  [& {:keys [pos arcbits arcs depth] :or {pos nil arcbits 0 arcs (repeat 64 nil) depth nil}}]
+  {:pos pos :arcbits arcbits :arcs (vec arcs) :depth depth})
+
+(defn set-arc
+  "Change one arc of a node"
+  [node arc-no arc-ptr]
+  (assoc
+    node
+    :arcbits (long (bit-set (:arcbits node) arc-no))
+    :arcs (assoc (:arcs node) arc-no arc-ptr)))
+
+(defn leaf
+  "A HAMT leaf node, with a key and a value"
+  [key value & node-params] (assoc (apply node node-params) :key key :value value))
+
+(defn leaf?
+  "Return true if node is a leaf"
+  [node]
+  (= 0 (:arcbits node)))
 
 (defn marshal-node
   "Create bytes from node, offset is added to all pointers"
@@ -158,10 +164,4 @@
           (leaf (unmarshal-string db) (unmarshal-string db) :pos position)
           (node :pos position :arcbits arcbits :arcs (unmarshal-arc-table arcbits db))))))
 
-(defn root-node [db]
-  (seek db 0)
-  (unmarshal-long db))
-
-(defn set-root-node [db ptr]
-  (write-bytes db (marshal-long ptr) 0))
 
