@@ -54,10 +54,6 @@
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
   ([key value] (store *db* key value))
   ([db key value]
-
-    ; Find the node path for the hashed key,
-    ; walk the node path and add new nodes for the modified branch
-
     (let [hashes (hash-codes key)
           branch (node-path db (io/root-node db) hashes 0)
           first-node (first branch)
