@@ -1,4 +1,4 @@
-(ns storage.core
+(ns storage.hamt
   (:import [clojure pprint__init])
   (:require [storage.io :as io]))
 

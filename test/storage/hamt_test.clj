@@ -1,6 +1,6 @@
-(ns storage.core-test
+(ns storage.hamt-test
   (:use midje.sweet)
-  (:use storage.core)
+  (:use storage.hamt)
   (:require [storage.io :as io]))
   
 (defn mock-read-db [& data]
