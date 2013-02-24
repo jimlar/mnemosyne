@@ -6,7 +6,7 @@ Note: this is work in progress, expect everything to blow up.
 
 http://en.wikipedia.org/wiki/Mnemosyne
 
-## Status
+## Done
 * Lock free concurrent read/write on disk HAMT
 
 ## TODO / Open questions
