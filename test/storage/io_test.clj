@@ -56,7 +56,7 @@
 
 (fact "leaf node can be unmarshalled"
   (unmarshal-node (hexreader "0000000161" "0000000162" "0000000000000000" "0000000000000000") 10)
-  => (leaf 10 "a" "b"))
+  => (leaf "a" "b" :pos 10))
 
 (fact "arc-node is marshalled with arc pointer table"
   (hexdump (marshal-node (set-arc (node) 2 4711) 0))

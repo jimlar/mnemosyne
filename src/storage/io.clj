@@ -69,13 +69,6 @@
 
 (defn node-size [] 16)
 
-;(defn node
-;  "Create a HAMT node with optional position, arcbits and arc pointers"
-;  ([] (node nil))
-;  ([pos] (node pos 0 (repeat 64 nil)))
-;  ([arcbits arcs] (node nil arcbits arcs))
-;  ([pos arcbits arcs] {:pos pos :arcbits (long arcbits) :arcs (vec arcs)}))
-
 (defn node
   "Create a HAMT node with optional position, arcbits and arc pointers"
   [& {:keys [pos arcbits arcs depth] :or {pos nil arcbits 0 arcs (repeat 64 nil) depth nil}}]
@@ -91,9 +84,7 @@
 
 (defn leaf
   "A HAMT leaf node, with a key and a value"
-  ([key value] (leaf nil key value))
-  ([pos key value] (assoc (node :pos pos) :key key :value value))
-  ([pos key value depth] (assoc (leaf pos key value) :depth depth)))
+  [key value & node-params] (assoc (apply node node-params) :key key :value value))
 
 (defn leaf?
   "Return true if node is a leaf"
@@ -164,7 +155,7 @@
             arcbits (unmarshal-long db)]
         (seek db pointer)
         (if (= 0 arcbits) ; leaf node or arc node?
-          (leaf position (unmarshal-string db) (unmarshal-string db))
+          (leaf (unmarshal-string db) (unmarshal-string db) :pos position)
           (node :pos position :arcbits arcbits :arcs (unmarshal-arc-table arcbits db))))))
 
 (defn root-node [db]

@@ -12,11 +12,11 @@
 
 (fact "node-path on leaf db gives list with leaf"
   (node-path (io/hexreader "0000000000000012" "0000000161" "0000000162" "00000000000000080000000000000000") 18 (hash-codes "a") 0)
-  => [(io/leaf 18 "a" "b" 0)])
+  => [(io/leaf "a" "b" :pos 18 :depth 0)])
 
 (fact "node-path on arc-node with leaf db gives list with leaf and arc-node"
   (node-path (io/hexreader "000000000000002A" "0000000161" "0000000162" "00000000000000080000000000000000" "0000000000000012" "00000000000000220000000200000000") 42 (hash-codes "a") 0)
-  => [(io/leaf 18 "a" "b" 1) (assoc (io/set-arc (io/node :pos 42) 33 18) :depth 0)])
+  => [(io/leaf "a" "b" :pos 18 :depth 1) (assoc (io/set-arc (io/node :pos 42) 33 18) :depth 0)])
 
 (fact "fetch on leaf node only returns leaf value"
   (fetch
@@ -57,13 +57,13 @@
   => ["the value" "the other value"])
 
 (fact "grow branch should replace leaf with new node pointing to leaf"
-  (grow-branch [(io/leaf 18 "a" "b" 0)] [33 1 0 0 0 0 0 0 0 0] [34 1 0 0 0 0 0 0 0 0])
+  (grow-branch [(io/leaf "a" "b"  :pos 18 :depth 0)] [33 1 0 0 0 0 0 0 0 0] [34 1 0 0 0 0 0 0 0 0])
   => [(io/set-arc (io/node :depth 0) 33 18)])
 
 (fact "grow branch should replace leaf with new nodes until hashes differ"
-  (grow-branch [(io/leaf 18 "a" "b" 0)] [33 1 0 0 0 0 0 0 0 0] [33 2 0 0 0 0 0 0 0 0])
+  (grow-branch [(io/leaf "a" "b" :pos 18 :depth 0)] [33 1 0 0 0 0 0 0 0 0] [33 2 0 0 0 0 0 0 0 0])
   => [(io/set-arc (io/node :depth 1) 1 18) (io/node :depth 0)]
-  (grow-branch [(io/leaf 18 "a" "b" 0)] [33 1 0 0 0 0 0 0 0 0] [33 1 0 0 0 0 0 0 0 1])
+  (grow-branch [(io/leaf "a" "b" :pos 18 :depth 0)] [33 1 0 0 0 0 0 0 0 0] [33 1 0 0 0 0 0 0 0 1])
   => [(io/set-arc (io/node :depth 9) 0 18)
       (io/node :depth 8)
       (io/node :depth 7)
