@@ -2,13 +2,80 @@
   (:import [clojure pprint__init])
   (:require [storage.io :as io]))
 
+;;;;;;;;;;;;;;;;;; hash related fns ;;;;;;;;;;;;;;;;;;
+
 (defn hash-codes
   "Hash a string key, returns a list of the 6-bit parts of the hash code"
   [^String key]
   (let [code (hash key)]
     (map #(bit-and (bit-shift-right code (* 6 %1)) 63) (range 0 10))))
 
-(defn node-path 
+;;;;;;;;;;;;;;;;;; nodes ;;;;;;;;;;;;;;;;;;
+
+(defn node-size [] 16)
+
+(defn node
+  "Create a HAMT node with optional position, arcbits and arc pointers"
+  [& {:keys [pos arcbits arcs depth] :or {pos nil arcbits 0 arcs (repeat 64 nil) depth nil}}]
+  {:pos pos :arcbits arcbits :arcs (vec arcs) :depth depth})
+
+(defn set-arc
+  "Change one arc of a node"
+  [node arc-no arc-ptr]
+  (assoc
+    node
+    :arcbits (long (bit-set (:arcbits node) arc-no))
+    :arcs (assoc (:arcs node) arc-no arc-ptr)))
+
+(defn leaf
+  "A HAMT leaf node, with a key and a value"
+  [key value & node-params] (assoc (apply node node-params) :key key :value value))
+
+(defn leaf?
+  "Return true if node is a leaf"
+  [node]
+  (= 0 (:arcbits node)))
+
+;;;;;;;;;;;;;;;;;; node marshaling ;;;;;;;;;;;;;;;;;;
+
+(defn marshal-node
+  "Create bytes from node, offset is added to all pointers"
+  [node offset]
+  (if (leaf? node)
+    (byte-array (concat (io/marshal-string (name (:key node)))
+                  (io/marshal-string (:value node))
+                  (io/marshal-long offset)
+                  (io/marshal-long 0)))
+    (byte-array (concat (apply concat (map io/marshal-long (filter #(not (nil? %)) (:arcs node))))
+                  (io/marshal-long offset)
+                  (io/marshal-long (:arcbits node))))))
+
+(defn unmarshal-arc-table
+  "Read arc pointer table into arc vector"
+  [arcbits db]
+  (map
+    (fn [bit]
+      (if (bit-test arcbits bit)
+        (io/unmarshal-long db)
+        nil))
+    (range 64)))
+
+(defn unmarshal-node
+  "Read node from bytes"
+  ([db position depth]
+    (assoc (unmarshal-node db position) :depth depth))
+  ([db position]
+    (io/seek db position)
+    (let [pointer (io/unmarshal-long db)
+          arcbits (io/unmarshal-long db)]
+      (io/seek db pointer)
+      (if (= 0 arcbits) ; leaf node or arc node?
+        (leaf (io/unmarshal-string db) (io/unmarshal-string db) :pos position)
+        (node :pos position :arcbits arcbits :arcs (unmarshal-arc-table arcbits db))))))
+
+;;;;;;;;;;;;;;;;;; hamt insert ;;;;;;;;;;;;;;;;;;
+
+(defn node-path
   "
   Reads the stored nodes matching the hash, deepest node first.
   (all hash bits may not be used)
@@ -16,9 +83,9 @@
   [db node-ptr hashes depth]
   (if (= 0 node-ptr)
     []
-    (let [node (io/unmarshal-node db node-ptr depth)]
+    (let [node (unmarshal-node db node-ptr depth)]
       (cond
-        (io/leaf? node) [node]
+        (leaf? node) [node]
         (>= depth (count hashes)) (throw (java.lang.IllegalStateException. "need to implement hash collision handling"))
         :else
           (let [child-ptr ((:arcs node) (first hashes))]
@@ -31,10 +98,10 @@
   (loop [depth (:depth leaf)
          branch branch]
     (if (= (nth leaf-hashes depth) (nth insert-hashes depth))
-      (recur (+ 1 depth) (conj branch (io/node :depth depth)))
+      (recur (+ 1 depth) (conj branch (node :depth depth)))
       (conj
         branch
-        (io/set-arc (io/node :depth depth) (nth leaf-hashes depth) (:pos leaf))))))
+        (set-arc (node :depth depth) (nth leaf-hashes depth) (:pos leaf))))))
 
 (defn store
   "Store a key with a value, copying needed nodes, creating a new root and storing a new root pointer"
@@ -42,28 +109,30 @@
     (let [hashes (hash-codes key)
           branch (node-path db (io/root-node-ptr db) hashes 0)
           first-node (first branch)
-          branch (if (io/leaf? first-node)
+          branch (if (leaf? first-node)
                     (if (= key (:key first-node))
                       (rest branch)
                       (grow-branch branch (hash-codes (:key first-node)) hashes))
                     branch)]
 
       ; Write the new leaf
-      (io/write-bytes db (io/marshal-node (io/leaf key value) (io/end-pointer db)))
+      (io/write-bytes db (marshal-node (leaf key value) (io/end-pointer db)))
 
       ; Write the grown branch, deepest node first, modifying the arc pointers for the branch processed
       (dorun
         (for [node branch]
           (io/write-bytes
             db
-            (io/marshal-node
-              (io/set-arc node (nth hashes (:depth node)) (- (io/end-pointer db) (io/node-size)))
+            (marshal-node
+              (set-arc node (nth hashes (:depth node)) (- (io/end-pointer db) (node-size)))
               (io/end-pointer db))))))
 
-    (io/save-root-node-ptr db (- (io/end-pointer db) (io/node-size)))
+    (io/save-root-node-ptr db (- (io/end-pointer db) (node-size)))
     db)
 
-(defn fetch 
+;;;;;;;;;;;;;;;;;; hamt fetch ;;;;;;;;;;;;;;;;;;
+
+(defn fetch
   "Fetch a value for a key, returns nil if not found"
   [db key]
     (let [node (first (node-path db (io/root-node-ptr db) (hash-codes key) 0))]

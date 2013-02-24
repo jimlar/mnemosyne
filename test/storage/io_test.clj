@@ -46,30 +46,6 @@
   (hexdump (marshal-string "a"))
   => "0000000161")
 
-(fact "leaf node are packed to marshalled key/value and zero bitmap"
-  (hexdump (marshal-node (leaf "a" "b") 0))
-  => "0000000161000000016200000000000000000000000000000000")
-
-(fact "the offset is added to key/value back reference"
-  (hexdump (marshal-node (leaf "a" "b") 4711))
-  => "0000000161000000016200000000000012670000000000000000")
-
-(fact "leaf node can be unmarshalled"
-  (unmarshal-node (hexreader "0000000161" "0000000162" "0000000000000000" "0000000000000000") 10)
-  => (leaf "a" "b" :pos 10))
-
-(fact "arc-node is marshalled with arc pointer table"
-  (hexdump (marshal-node (set-arc (node) 2 4711) 0))
-  => "000000000000126700000000000000000000000000000004")
-
-(fact "arc-node is marshalled with arc pointer table and file offset"
-  (hexdump (marshal-node (set-arc (node) 2 4711) 3))
-  => "000000000000126700000000000000030000000000000004")
-
-(fact "arc-node is marshalled with arc pointer table"
-  (unmarshal-node (hexreader "0000000000001267" "0000000000000000" "0000000000000004") 8)
-  => (set-arc (node :pos 8) 2 4711))
-
 (fact "root-node read from start of file"
   (root-node-ptr (hexreader "0000000000000010" "0000000161" "0000000162" "0000000000000008" "0000000000000000"))
   => 16)
