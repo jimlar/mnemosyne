@@ -15,3 +15,8 @@
 (fact "parse line supports command with arguments"
   (parse-line "put a") => {:command :PUT :args "a"}
   (parse-line "put a b") => {:command :PUT :args "a b"})
+
+(fact "unmatched commands give error string back"
+  (execute-command {:command :kalle-kula}) => "Unknown command kalle-kula"
+  (execute-command {:command nil}) => "You need to supply a command"
+  (execute-command {}) => "You need to supply a command")

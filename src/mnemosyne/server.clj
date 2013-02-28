@@ -10,7 +10,9 @@
 
 (defmethod execute-command :default
   [{args :args cmd :command}]
-  (str "Unknown command " (if cmd (name cmd))))
+  (if cmd
+      (str "Unknown command " (name cmd))
+      "You need to supply a command"))
 
 (defmethod execute-command :SET
   [{args :args}]
