@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.0"]
-                 [aleph "0.3.0-beta13"]]
+                 [aleph "0.3.0-beta14"]]
   :main mnemosyne.server
   :profiles {
     :dev {
