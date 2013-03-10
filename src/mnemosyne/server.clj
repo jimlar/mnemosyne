@@ -22,6 +22,10 @@
       (m-hamt/store db key value)
       "OK"))
 
+(defmethod execute-command :GET
+  [{:keys [db args]}]
+  (or (m-hamt/fetch db args) ""))
+
 ;;;;;;;;;;;;;;;;;; Protocol parsing ;;;;;;;;;;;;;;;;;;
 
 (defn parse-line [line]

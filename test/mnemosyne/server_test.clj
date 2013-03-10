@@ -26,3 +26,15 @@
     (execute-command {:command :SET :db db :args "this-is-the-key this is a value with spaces in"}) => "OK"
     (provided
       (#'mnemosyne.hamt/store db "this-is-the-key" "this is a value with spaces in") => db :times 1)))
+
+(fact "executing get actually calls set on the current db"
+  (let [db "fake db"]
+    (execute-command {:command :GET :db db :args "this-is-the-key"}) => "this is the value with spaces in"
+    (provided
+      (#'mnemosyne.hamt/fetch db "this-is-the-key") => "this is the value with spaces in" :times 1)))
+
+(fact "executing get on non existing key gives empty string"
+  (let [db "fake db"]
+    (execute-command {:command :GET :db db :args "missing key"}) => ""
+    (provided
+      (#'mnemosyne.hamt/fetch db "missing key") => nil :times 1)))
