@@ -2,7 +2,9 @@
   (:require [lamina.core :as lamina]
             [aleph.tcp :as aleph]
             [gloss.core :as gloss]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [mnemosyne.io :as m-io]
+            [mnemosyne.hamt :as m-hamt]))
 
 ;;;;;;;;;;;;;;;;;; Protocol commands ;;;;;;;;;;;;;;;;;;
 
@@ -15,8 +17,10 @@
       "You need to supply a command"))
 
 (defmethod execute-command :SET
-  [{args :args}]
-    (str "You want to SET " args))
+  [{:keys [db args]}]
+    (let [[key value ] (string/split args #" " 2)]
+      (m-hamt/store db key value)
+      "OK"))
 
 ;;;;;;;;;;;;;;;;;; Protocol parsing ;;;;;;;;;;;;;;;;;;
 
@@ -30,18 +34,18 @@
       (= 0 (count argument)) {:command (keyword command)}
       :else {:command (keyword command) :args argument})))
 
-(defn parse-and-execute [line]
-  (execute-command (parse-line line)))
+(defn parse-and-execute [db line]
+  (execute-command (assoc (parse-line line) :db db)))
 
 ;;;;;;;;;;;;;;;;;; TCP Server ;;;;;;;;;;;;;;;;;;
 
 (defn start-server
   "Start a server on port passing each input line to handler with responds by returning a string response"
-  [port line-handler]
+  [port line-handler db]
   (aleph/start-tcp-server
-    (fn [ch client-info] (lamina/receive-all ch #(lamina/enqueue ch (line-handler %))))
+    (fn [ch client-info] (lamina/receive-all ch #(lamina/enqueue ch (line-handler db %))))
     {:port port, :frame (gloss/string :utf-8 :delimiters ["\r\n"])})
   (print (str "Started on port " port "\n")))
 
 (defn -main [& m]
-  (start-server 10000 parse-and-execute))
+  (start-server 10000 parse-and-execute (m-io/open-db)))

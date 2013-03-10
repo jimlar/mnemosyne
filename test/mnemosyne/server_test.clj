@@ -20,3 +20,9 @@
   (execute-command {:command :kalle-kula}) => "Unknown command kalle-kula"
   (execute-command {:command nil}) => "You need to supply a command"
   (execute-command {}) => "You need to supply a command")
+
+(fact "executing set actually calls set on the current db"
+  (let [db "fake db"]
+    (execute-command {:command :SET :db db :args "this-is-the-key this is a value with spaces in"}) => "OK"
+    (provided
+      (#'mnemosyne.hamt/store db "this-is-the-key" "this is a value with spaces in") => db :times 1)))
