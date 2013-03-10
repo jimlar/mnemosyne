@@ -7,3 +7,4 @@
 /.lein-plugins
 /.idea
 /mnemosynedb.iml
+/.lein-repl-history

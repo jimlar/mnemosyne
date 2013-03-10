@@ -5,16 +5,10 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [aleph "0.3.0-beta13"]]
-  :repositories {"stuart" "http://stuartsierra.com/maven2"}
   :main mnemosyne.server
   :profiles {
     :dev {
-      :plugins [[lein-midje "2.0.3"]]
+      :dependencies [[midje "1.5.0"]]
+      :plugins [[lein-midje "3.0.0"]]
     }
-    :test {
-      :dependencies [
-        [midje "1.4.0"]
-        [com.stuartsierra/lazytest "1.2.3"]
-      ]
-    }
-  })
+})
