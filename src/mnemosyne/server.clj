@@ -16,13 +16,13 @@
       (str "Unknown command " (name cmd))
       "You need to supply a command"))
 
-(defmethod execute-command :SET
+(defmethod execute-command :set
   [{:keys [db args]}]
     (let [[key value ] (string/split args #" " 2)]
       (m-hamt/store db key value)
       "OK"))
 
-(defmethod execute-command :GET
+(defmethod execute-command :get
   [{:keys [db args]}]
   (or (m-hamt/fetch db args) ""))
 
@@ -31,7 +31,6 @@
 (defn parse-line [line]
   (let [split-line (re-find #"^(\w+) ?(.*)$" line)
         command (nth split-line 1)
-        command (if (nil? command) nil (string/upper-case command))
         argument (nth split-line 2)]
     (cond
       (= 0 (count command)) {}
