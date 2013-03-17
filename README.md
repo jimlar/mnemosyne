@@ -7,16 +7,19 @@ Note: this is work in progress, expect everything to blow up.
 http://en.wikipedia.org/wiki/Mnemosyne
 
 ## Done
-* Lock free concurrent read/write on disk HAMT
+* Lock free concurrent read/write on disk HAMT structure
 
 ## TODO / Open questions
 
-* Will the on disk HAMT work with replication?
-* Skip replication?
-* Key/hint-tables in memory?
-* Synchronization, vector clocks, distributes time - NTP?
+* Agent to serialize the writes
+* Duplicated mmapped buffer pool for reads
+* Should I do distributon and will the on disk HAMT work with replication?
+    * Synchronization, vector clocks, distributes time - NTP?
 * Transactions or not?
-* How to manage files open for read and write - mmap?
+* Key/hint-tables in memory?
+* Gloss for the binary encoding/decoding?
+* Add go back in history API
+* Introduce "reference" type for pointer to create/serialize branches completely before writing them? (less logic in the store function)
 
 ## Assumptions/decisions
 
