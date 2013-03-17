@@ -87,10 +87,9 @@
         (leaf? node) [node]
         (>= depth (count hashes)) (throw (java.lang.IllegalStateException. "need to implement hash collision handling"))
         :else
-          (let [child-ptr ((:arcs node) (first hashes))]
-            (if (nil? child-ptr) 
-              [node]
-              (conj (node-path db child-ptr (rest hashes) (+ depth 1)) node)))))))
+          (if-let [child-ptr ((:arcs node) (first hashes))]
+            (conj (node-path db child-ptr (rest hashes) (+ depth 1)) node)
+            [node])))))
 
 (defn grow-branch [[leaf & branch] leaf-hashes insert-hashes]
   "Modify an existing branch for insertion of the insert hash key"
@@ -118,13 +117,12 @@
       (io/write-bytes db (marshal-node (leaf key value) (io/end-pointer db)))
 
       ; Write the grown branch, deepest node first, modifying the arc pointers for the branch processed
-      (dorun
-        (for [node branch]
-          (io/write-bytes
-            db
-            (marshal-node
-              (set-arc node (nth hashes (:depth node)) (- (io/end-pointer db) (node-size)))
-              (io/end-pointer db))))))
+      (doseq [node branch]
+        (io/write-bytes
+          db
+          (marshal-node
+            (set-arc node (nth hashes (:depth node)) (- (io/end-pointer db) (node-size)))
+            (io/end-pointer db)))))
 
     (io/save-root-node-ptr db (- (io/end-pointer db) (node-size)))
     db)
