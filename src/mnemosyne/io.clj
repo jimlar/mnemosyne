@@ -16,7 +16,7 @@
 (defn map-file
   "Create a memory mapped buffer for the file"
   [file pos size]
-  (let [raf (java.io.RandomAccessFile. file "rw")
+  (let [raf (java.io.RandomAccessFile. file "rws")
         mapped (.map (.getChannel raf) java.nio.channels.FileChannel$MapMode/READ_WRITE pos size)]
       (.close raf)
       mapped))
@@ -103,12 +103,12 @@
 (defn unmarshal-int
   "Reads 4 bytes from in and turns them into a 32-bit integer (assumes big endian)"
   [db]
-  (.getInt (java.nio.ByteBuffer/wrap (read-bytes db 4)) 0))
+  (.getInt (:out db 4)))
 
 (defn unmarshal-long
   "Reads 8 bytes from in and turns them into a 64-bit long (assumes big endian)"
   [db]
-  (.getLong (java.nio.ByteBuffer/wrap (read-bytes db 8)) 0))
+  (.getLong (:out db)))
 
 (defn marshal-string
   "Turn string into byte sequence for disk storage"
