@@ -27,7 +27,7 @@
   ([file]
     (let [file (ensure-file file)
           root-ptr (map-file file 0 8)
-          out (map-file file 0 Integer/MAX_VALUE)]
+          out (map-file file 8 Integer/MAX_VALUE)]
       {
         :file file
         :root-ptr-buffer root-ptr
@@ -77,9 +77,12 @@
 
 
 (defn dump-db [db]
-  (let [size (end-pointer db)]
-    (seek db 0)
-    (hexdump (read-bytes db size))))
+  (let [size (end-pointer db)
+        _ (seek db 0)
+        db-data (read-bytes db size)]
+    (.position (:root-ptr-buffer db) 0)
+    (.get (:root-ptr-buffer db) db-data 0 8)
+    (hexdump db-data)))
 
 (defn fake-db
   "Open a fake db by hexreading the supplied strings"
