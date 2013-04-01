@@ -117,6 +117,10 @@
           file-ptr (io/write-bytes db (marshal-node (leaf key value) (io/end-pointer db)))]
 
       ; Write the grown branch, deepest node first, modifying the arc pointers for the branch processed
+
+      ;
+      ; TODO: clean this mess up, recursive build of bytes first then write?
+      ;
       (let [file-ptr
             (loop [node (first branch)
                    left (rest branch)
