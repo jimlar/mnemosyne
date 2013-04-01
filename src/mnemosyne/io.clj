@@ -1,5 +1,4 @@
-(ns mnemosyne.io
-  (:require [clojure.java.io :as java-io]))
+(ns mnemosyne.io)
 
 (declare root-node-ptr)
 (declare hexdump)
@@ -31,13 +30,13 @@
           out (map-file file 0 Integer/MAX_VALUE)]
       {
         :file file
-        :root-ptr root-ptr
+        :root-ptr-buffer root-ptr
         :out out
       })))
 
 (defn close-db [db]
   (.close (:out db))
-  (.close (:root-ptr db)))
+  (.close (:root-ptr-buffer db)))
 
 (defn end-pointer [db]
   (let [root (root-node-ptr db)]
@@ -55,26 +54,20 @@
 
 (defn write-bytes
   "Writes bytes and returns the resulting file pos"
-  ([db data] (write-bytes db data (end-pointer db)))
-  ([db data pos]
-    (seek db pos)
+  [db data pos]
+    (.position (:out db) (int pos))
     (.put (:out db) data)
-    (+ pos (count data))))
+    (+ pos (count data)))
 
 ;;;;;;;;;;;;;;;;;; hex dump and read ;;;;;;;;;;;;;;;;;;
 
 (defn hexdump
-  "Create a hex-string from a byte array or random access file"
+  "Create a hex-string from a byte array"
   [barray]
-  (if (instance? java.io.RandomAccessFile barray)
-    (let [bs (byte-array (.length barray))]
-      (seek barray 0)
-      (.readFully barray bs)
-      (hexdump bs))
-    (apply str (map #(with-out-str (printf "%02x" %)) barray))))
+  (apply str (map #(with-out-str (printf "%02x" %)) barray)))
 
 (defn hexreader
-  "Convert hex-string to a seekable input stream"
+  "Convert hex-strings to a byte buffer"
   [& strs] 
   (java.nio.ByteBuffer/wrap 
     (byte-array 
@@ -93,7 +86,7 @@
   [& strs]
   (let [bytes (apply hexreader strs)
         size (.capacity bytes)]
-    {:root-ptr bytes :out bytes}))
+    {:root-ptr-buffer bytes :out bytes}))
 
 ;;;;;;;;;;;;;;;;;; mashal and unmarshaling ;;;;;;;;;;;;;;;;;;
 
@@ -132,9 +125,8 @@
 ;;;;;;;;;;;;;;;;;; latest root node pointer ;;;;;;;;;;;;;;;;;;
 
 (defn root-node-ptr [db]
-  (seek db 0)
-  (unmarshal-long db))
+  (.getLong (:root-ptr-buffer db) 0))
 
 (defn save-root-node-ptr [db ptr]
-  (write-bytes db (marshal-long ptr) 0))
+  (.putLong (:root-ptr-buffer db) 0 ptr))
 

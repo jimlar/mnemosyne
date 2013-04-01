@@ -114,7 +114,8 @@
                     branch)
 
           ; Write the new leaf
-          file-ptr (io/write-bytes db (marshal-node (leaf key value) (io/end-pointer db)))]
+          file-ptr (io/end-pointer db)
+          file-ptr (io/write-bytes db (marshal-node (leaf key value) file-ptr) file-ptr)]
 
       ; Write the grown branch, deepest node first, modifying the arc pointers for the branch processed
 
