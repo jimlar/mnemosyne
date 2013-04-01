@@ -51,12 +51,13 @@
 
 (defn unmarshal-arc-table
   "Read arc pointer table into arc vector"
-  [arcbits db]
-  (map
-    (fn [bit]
+  [arcbits db pos]
+  (reduce
+    (fn [v bit]
       (if (bit-test arcbits bit)
-        (io/unmarshal-long db)
-        nil))
+        (conj v (io/unmarshal-long db (+ pos (* (count (filter (complement nil?) v)) 8))))
+        (conj v nil)))
+    []
     (range 64)))
 
 (defn unmarshal-node
@@ -64,13 +65,14 @@
   ([db position depth]
     (assoc (unmarshal-node db position) :depth depth))
   ([db position]
-    (io/seek db position)
-    (let [pointer (io/unmarshal-long db)
-          arcbits (io/unmarshal-long db)]
-      (io/seek db pointer)
+    (let [pointer (io/unmarshal-long db position)
+          arcbits (io/unmarshal-long db (+ 8 position))]
       (if (= 0 arcbits) ; leaf node or arc node?
-        (leaf (io/unmarshal-string db) (io/unmarshal-string db) :pos position)
-        (node :pos position :arcbits arcbits :arcs (unmarshal-arc-table arcbits db))))))
+        (let [key (io/unmarshal-string db pointer)
+              pointer (+ pointer 4 (count key))
+              value (io/unmarshal-string db pointer)]
+          (leaf key value :pos position))
+        (node :pos position :arcbits arcbits :arcs (unmarshal-arc-table arcbits db pointer))))))
 
 ;;;;;;;;;;;;;;;;;; hamt insert ;;;;;;;;;;;;;;;;;;
 
