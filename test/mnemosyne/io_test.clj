@@ -3,7 +3,7 @@
   (:use mnemosyne.io))
 
 (fact "hexreader decodes 4711 properly"
-  (apply list (read-bytes (fake-db "4711") 2))
+  (apply list (read-bytes (fake-db "4711") 0 2))
   => [(byte 0x47) (byte 0x11)])
   
 (fact "hexdump dumps 4711 properly"

@@ -44,8 +44,9 @@
       8
       (+ 16 root))))
 
-(defn read-bytes [db n]
+(defn read-bytes [db pos n]
   (let [bs (byte-array n)]
+    (.position (:out db) pos)
     (.get (:out db) bs)
     bs))
 
@@ -75,8 +76,7 @@
 
 (defn dump-db [db]
   (let [size (end-pointer db)
-        _ (.position (:out db) 0)
-        db-data (read-bytes db size)]
+        db-data (read-bytes db 0 size)]
     (.position (:root db) 0)
     (.get (:root db) db-data 0 8)
     (hexdump db-data)))
@@ -120,8 +120,7 @@
   "Read a string"
   [db pos]
   (let [len (unmarshal-int db pos)]
-    (.position (:out db) (+ pos 4))
-    (String. (read-bytes db len) "utf-8")))
+    (String. (read-bytes db (+ pos 4) len) "utf-8")))
 
 ;;;;;;;;;;;;;;;;;; latest root node pointer ;;;;;;;;;;;;;;;;;;
 
