@@ -1,6 +1,7 @@
 (ns mnemosyne.io)
 
 (declare root-node-ptr)
+(declare end-pointer)
 (declare hexdump)
 
 ;;;;;;;;;;;;;;;;;; disk io ;;;;;;;;;;;;;;;;;;
@@ -36,6 +37,8 @@
           root (map-file file true 0 8)
           write (map-file file true 8 Integer/MAX_VALUE)
           read (map-file file 8 Integer/MAX_VALUE)]
+      ; Set write position
+      (.position write (end-pointer {:root root}))
       {
         :file file
         :root root
@@ -62,7 +65,6 @@
 (defn write-bytes
   "Writes bytes and returns the resulting file pos"
   [db data pos]
-    (.position (:write db) (int pos))
     (.put (:write db) data)
     (+ pos (count data)))
 
