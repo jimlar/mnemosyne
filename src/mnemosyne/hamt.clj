@@ -111,20 +111,28 @@
                     (if (= key (:key first-node))
                       (rest branch)
                       (grow-branch branch (hash-codes (:key first-node)) hashes))
-                    branch)]
+                    branch)
 
-      ; Write the new leaf
-      (io/write-bytes db (marshal-node (leaf key value) (io/end-pointer db)))
+          ; Write the new leaf
+          file-ptr (io/write-bytes db (marshal-node (leaf key value) (io/end-pointer db)))]
 
       ; Write the grown branch, deepest node first, modifying the arc pointers for the branch processed
-      (doseq [node branch]
-        (io/write-bytes
-          db
-          (marshal-node
-            (set-arc node (nth hashes (:depth node)) (- (io/end-pointer db) (node-size)))
-            (io/end-pointer db)))))
-
-    (io/save-root-node-ptr db (- (io/end-pointer db) (node-size)))
+      (let [file-ptr
+            (loop [node (first branch)
+                   left (rest branch)
+                   file-ptr file-ptr]
+              (if node
+                (recur
+                  (first left)
+                  (rest left)
+                  (io/write-bytes
+                    db
+                    (marshal-node
+                      (set-arc node (nth hashes (:depth node)) (- file-ptr (node-size)))
+                      file-ptr)
+                    file-ptr))
+                file-ptr))]
+        (io/save-root-node-ptr db (- file-ptr (node-size)))))
     db)
 
 ;;;;;;;;;;;;;;;;;; hamt fetch ;;;;;;;;;;;;;;;;;;

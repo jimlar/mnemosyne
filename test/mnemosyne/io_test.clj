@@ -3,7 +3,7 @@
   (:use mnemosyne.io))
 
 (fact "hexreader decodes 4711 properly"
-  (apply list (read-bytes (hexreader "4711") 2))
+  (apply list (read-bytes (fake-db "4711") 2))
   => [(byte 0x47) (byte 0x11)])
   
 (fact "hexdump dumps 4711 properly"
@@ -47,7 +47,7 @@
   => "0000000161")
 
 (fact "root-node read from start of file"
-  (root-node-ptr (hexreader "0000000000000010" "0000000161" "0000000162" "0000000000000008" "0000000000000000"))
+  (root-node-ptr (fake-db "0000000000000010" "0000000161" "0000000162" "0000000000000008" "0000000000000000"))
   => 16)
 
 

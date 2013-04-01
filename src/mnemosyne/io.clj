@@ -1,50 +1,65 @@
 (ns mnemosyne.io
   (:require [clojure.java.io :as java-io]))
 
+(declare root-node-ptr)
+(declare hexdump)
+
 ;;;;;;;;;;;;;;;;;; disk io ;;;;;;;;;;;;;;;;;;
 
+(defn ensure-file
+  "Ensure that fhe file i a java.io.File, accepts String and File argument"
+  [file]
+  (cond
+    (instance? java.io.File file) file
+    (string? file) (java.io.File. file)
+    :else (throw (IllegalArgumentException. (str "expected String or java.io.File, got: " (class file))))))
+
+(defn map-file
+  "Create a memory mapped buffer for the file"
+  [file pos size]
+  (let [raf (java.io.RandomAccessFile. file "rw")
+        mapped (.map (.getChannel raf) java.nio.channels.FileChannel$MapMode/READ_WRITE pos size)]
+      (.close raf)
+      mapped))
+
 (defn open-db
+  "Open the on disk database"
   ([] (open-db (str (java.io.File/createTempFile "mnemosyne" ".tmp"))))
   ([file]
-    (let [out (java.io.RandomAccessFile. file "rws")]
-      (if (= 0 (.length out))
-        (doall (repeatedly 8 #(.write out 0))))
-      out)))
+    (let [file (ensure-file file)
+          root-ptr (map-file file 0 8)
+          out (map-file file 0 Integer/MAX_VALUE)]
+      {
+        :file file
+        :root-ptr root-ptr
+        :out out
+      })))
 
 (defn close-db [db]
-  (.close db))
+  (.close (:out db))
+  (.close (:root-ptr db)))
 
 (defn end-pointer [db]
-  (.length db))
-
-(defn write-bytes 
-  ([db data] (write-bytes db data (end-pointer db)))
-  ([db data pos] 
-    (.seek db pos)
-    (.write db data)
-    db))
-
-(defprotocol SeekableInput
-  (seek-to [r pos])
-  (read-bs [r bs]))
-
-(extend-type java.io.RandomAccessFile
-  SeekableInput
-  (seek-to [r pos] (.seek r pos))
-  (read-bs [r bs] (.read r bs)))
-
-(extend-type java.nio.ByteBuffer
-  SeekableInput
-  (seek-to [r pos] (.position r (int pos)))
-  (read-bs [r bs] (.get r bs)))
+  (let [root (root-node-ptr db)]
+    (if (= 0 root)
+      8
+      (+ 16 root))))
 
 (defn read-bytes [db n]
   (let [bs (byte-array n)]
-    (read-bs db bs)
+    (.get (:out db) bs)
     bs))
 
 (defn seek [db pos]
-  (seek-to db pos))
+  (.position (:out db) (int pos)))
+
+(defn write-bytes
+  "Writes bytes and returns the resulting file pos"
+  ([db data] (write-bytes db data (end-pointer db)))
+  ([db data pos]
+    (seek db pos)
+    (.put (:out db) data)
+    (+ pos (count data))))
 
 ;;;;;;;;;;;;;;;;;; hex dump and read ;;;;;;;;;;;;;;;;;;
 
@@ -66,6 +81,19 @@
       (map #(byte (Integer/parseInt % 16)) 
            (map #(apply str %) 
                 (partition-all 2 (apply str strs)))))))
+
+
+(defn dump-db [db]
+  (let [size (end-pointer db)]
+    (seek db 0)
+    (hexdump (read-bytes db size))))
+
+(defn fake-db
+  "Open a fake db by hexreading the supplied strings"
+  [& strs]
+  (let [bytes (apply hexreader strs)
+        size (.capacity bytes)]
+    {:root-ptr bytes :out bytes}))
 
 ;;;;;;;;;;;;;;;;;; mashal and unmarshaling ;;;;;;;;;;;;;;;;;;
 

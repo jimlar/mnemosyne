@@ -3,9 +3,6 @@
   (:use mnemosyne.hamt)
   (:require [mnemosyne.io :as io]))
   
-(defn mock-read-db [& data]
-  (apply io/hexreader data))
-
 (fact "leaf node are packed to marshalled key/value and zero bitmap"
   (io/hexdump (marshal-node (leaf "a" "b") 0))
   => "0000000161000000016200000000000000000000000000000000")
@@ -15,7 +12,7 @@
   => "0000000161000000016200000000000012670000000000000000")
 
 (fact "leaf node can be unmarshalled"
-  (unmarshal-node (io/hexreader "0000000161" "0000000162" "0000000000000000" "0000000000000000") 10)
+  (unmarshal-node (io/fake-db "0000000161" "0000000162" "0000000000000000" "0000000000000000") 10)
   => (leaf "a" "b" :pos 10))
 
 (fact "arc-node is marshalled with arc pointer table"
@@ -27,31 +24,31 @@
   => "000000000000126700000000000000030000000000000004")
 
 (fact "arc-node is marshalled with arc pointer table"
-  (unmarshal-node (io/hexreader "0000000000001267" "0000000000000000" "0000000000000004") 8)
+  (unmarshal-node (io/fake-db "0000000000001267" "0000000000000000" "0000000000000004") 8)
   => (set-arc (node :pos 8) 2 4711))
 
 (fact "node-path on empty db gives empty list"
-  (node-path (io/hexreader "0000000000000000") 0 (hash-codes "a") 0)
+  (node-path (io/fake-db "0000000000000000") 0 (hash-codes "a") 0)
   => [])
 
 (fact "node-path on leaf db gives list with leaf"
-  (node-path (io/hexreader "0000000000000012" "0000000161" "0000000162" "00000000000000080000000000000000") 18 (hash-codes "a") 0)
+  (node-path (io/fake-db "0000000000000012" "0000000161" "0000000162" "00000000000000080000000000000000") 18 (hash-codes "a") 0)
   => [(leaf "a" "b" :pos 18 :depth 0)])
 
 (fact "node-path on arc-node with leaf db gives list with leaf and arc-node"
-  (node-path (io/hexreader "000000000000002A" "0000000161" "0000000162" "00000000000000080000000000000000" "0000000000000012" "00000000000000220000000200000000") 42 (hash-codes "a") 0)
+  (node-path (io/fake-db "000000000000002A" "0000000161" "0000000162" "00000000000000080000000000000000" "0000000000000012" "00000000000000220000000200000000") 42 (hash-codes "a") 0)
   => [(leaf "a" "b" :pos 18 :depth 1) (assoc (set-arc (node :pos 42) 33 18) :depth 0)])
 
 (fact "fetch on leaf node only returns leaf value"
   (fetch
-    (mock-read-db "0000000000000012" "0000000161" "0000000162" "00000000000000080000000000000000")
+    (io/fake-db "0000000000000012" "0000000161" "0000000162" "00000000000000080000000000000000")
     "a")
   => "b")
 
 (fact "store on empty db stores a leaf"
   (let [db (io/open-db)]
     (store db "a" "b")
-    (io/hexdump db))
+    (io/dump-db db))
   => "00000000000000120000000161000000016200000000000000080000000000000000")
 
 (fact "store single key value on empty db can be read back"
