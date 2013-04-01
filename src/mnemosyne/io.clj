@@ -15,27 +15,36 @@
 
 (defn map-file
   "Create a memory mapped buffer for the file"
-  [file pos size]
-  (let [raf (java.io.RandomAccessFile. file "rws")
-        mapped (.map (.getChannel raf) java.nio.channels.FileChannel$MapMode/READ_WRITE pos size)]
+  ([file pos size] (map-file file false pos size))
+  ([file read-write pos size]
+  (let [raf (java.io.RandomAccessFile. file (if read-write "rws" "r"))
+        mapped (.map
+                 (.getChannel raf)
+                 (if read-write
+                   java.nio.channels.FileChannel$MapMode/READ_WRITE
+                   java.nio.channels.FileChannel$MapMode/READ_ONLY)
+                 pos
+                 size)]
       (.close raf)
-      mapped))
+      mapped)))
 
 (defn open-db
   "Open the on disk database"
   ([] (open-db (str (java.io.File/createTempFile "mnemosyne" ".tmp"))))
   ([file]
     (let [file (ensure-file file)
-          root (map-file file 0 8)
-          out (map-file file 8 Integer/MAX_VALUE)]
+          root (map-file file true 0 8)
+          write (map-file file true 8 Integer/MAX_VALUE)
+          read (map-file file 8 Integer/MAX_VALUE)]
       {
         :file file
         :root root
-        :out out
+        :read read
+        :write write
       })))
 
 (defn close-db [db]
-  (.close (:out db))
+  (.close (:read db))
   (.close (:root db)))
 
 (defn end-pointer [db]
@@ -46,15 +55,15 @@
 
 (defn read-bytes [db pos n]
   (let [bs (byte-array n)]
-    (.position (:out db) pos)
-    (.get (:out db) bs)
+    (.position (:read db) pos)
+    (.get (:read db) bs)
     bs))
 
 (defn write-bytes
   "Writes bytes and returns the resulting file pos"
   [db data pos]
-    (.position (:out db) (int pos))
-    (.put (:out db) data)
+    (.position (:write db) (int pos))
+    (.put (:write db) data)
     (+ pos (count data)))
 
 ;;;;;;;;;;;;;;;;;; hex dump and read ;;;;;;;;;;;;;;;;;;
@@ -86,7 +95,7 @@
   [& strs]
   (let [bytes (apply hexreader strs)
         size (.capacity bytes)]
-    {:root bytes :out bytes}))
+    {:root bytes :read bytes}))
 
 ;;;;;;;;;;;;;;;;;; mashal and unmarshaling ;;;;;;;;;;;;;;;;;;
 
@@ -103,12 +112,12 @@
 (defn unmarshal-int
   "Reads 4 bytes from in and turns them into a 32-bit integer (assumes big endian)"
   [db pos]
-  (.getInt (:out db) (int pos)))
+  (.getInt (:read db) (int pos)))
 
 (defn unmarshal-long
   "Reads 8 bytes from in and turns them into a 64-bit long (assumes big endian)"
   [db pos]
-  (.getLong (:out db) (int pos)))
+  (.getLong (:read db) (int pos)))
 
 (defn marshal-string
   "Turn string into byte sequence for disk storage"
