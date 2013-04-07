@@ -11,6 +11,7 @@ http://en.wikipedia.org/wiki/Mnemosyne
 
 ## TODO / Open questions
 
+* Memory map in blocks, one block for existing file and extend with new chunks
 * Agent to serialize the writes
 * Duplicated mmapped buffer pool for reads
 * Should I do distributon and will the on disk HAMT work with replication?
